@@ -3,8 +3,6 @@ import { useAuth } from "../context/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
-  activePage: string;
-  onNavigate: (page: string) => void;
 }
 
 const navItems = [
@@ -47,7 +45,15 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   taxInvoice: { title: "Tax Invoice", subtitle: "Generated tax invoice details" },
 };
 
-export default function Layout({ children, activePage, onNavigate }: LayoutProps) {
+import { useLocation, useNavigate } from "react-router-dom";
+
+export default function Layout({ children }: LayoutProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Determine activePage from URL path
+  const path = location.pathname;
+  const activePage = path === "/" ? "home" : path.split("/")[1];
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -82,7 +88,8 @@ export default function Layout({ children, activePage, onNavigate }: LayoutProps
   };
 
   const handleNavigate = (pageId: string) => {
-    onNavigate(pageId);
+    const target = pageId === "home" ? "/" : `/${pageId}`;
+    navigate(target);
     setMobileOpen(false);
   };
 

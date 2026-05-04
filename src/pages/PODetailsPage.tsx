@@ -4,16 +4,16 @@ import Pagination from "../components/Pagination";
 import ColumnFilterPanel from "../components/ColumnFilterPanel";
 import { applyColumnFilters, type ColumnFilters, type FilterField } from "../utils/tableFilters";
 
-interface Props {
-  onBack: () => void;
-  projectId?: number | null;
-}
+import { useParams, useNavigate } from "react-router-dom";
 
 function formatCurrency(num: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(num);
 }
 
-export default function PODetailsPage({ onBack, projectId }: Props) {
+export default function PODetailsPage() {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  
   const [poData, setPoData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function PODetailsPage({ onBack, projectId }: Props) {
     <div className="min-h-full flex flex-col gap-6">
       <div className="pm-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button type="button" onClick={onBack} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
+          <button type="button" onClick={() => navigate(-1)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             Back
           </button>

@@ -32,7 +32,10 @@ function formatShort(num: number): string {
   return `${num}`;
 }
 
-export default function HomePage({ onNavigate }: { onNavigate: (page: string) => void }) {
+import { useNavigate } from "react-router-dom";
+
+export default function HomePage() {
+  const navigate = useNavigate();
   const stats = useMemo(() => getDashboardStats(), []);
 
   const statCards = [
@@ -208,8 +211,8 @@ export default function HomePage({ onNavigate }: { onNavigate: (page: string) =>
             <p className="text-sm text-gray-500">Total project indent amounts by ministry</p>
           </div>
           <button
-            onClick={() => onNavigate("projects")}
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+            onClick={() => navigate("/projects")}
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 cursor-pointer"
           >
             View all projects
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -101,7 +101,7 @@ function ManagerCard({
 }
 
 // ─── Shared detail table + chart ─────────────────────────────────────────────
-function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: ManagerData; managerId: number; onNavigateToProjects: (typeCode: string, count: number, mgrId: number) => void }) {
+function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: ManagerData; managerId: number; onNavigateToProjects: (typeCode: string, count: number) => void }) {
   const total = data.projects.reduce((s, p) => s + p.count, 0);
   const topProjectsData = useMemo(
     () => [...data.projects].sort((a, b) => b.count - a.count).slice(0, 8),
@@ -149,7 +149,7 @@ function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: Manage
                 return (
                   <tr
                     key={project.code}
-                    onClick={() => onNavigateToProjects(project.code, project.count, managerId)}
+                    onClick={() => onNavigateToProjects(project.code, project.count)}
                     title={`Click to view ${project.count} ${project.type} projects`}
                     className={`cursor-pointer transition-colors group ${isHighlighted ? "bg-yellow-50 hover:bg-yellow-100/80" : "hover:bg-primary-50/60"}`}
                   >
@@ -220,11 +220,38 @@ function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: Manage
 
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-interface ManagersPageProps {
-  onNavigate: (typeCode?: string, count?: number, mgrId?: number) => void;
-}
+import { useSearchParams, useNavigate } from "react-router-dom";
 
-export default function ManagersPage({ onNavigate }: ManagersPageProps) {
+export default function ManagersPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const selectedManagerId = searchParams.get("mgrId");
+  const selectedManagerName = searchParams.get("mgrName");
+  
+  const selectedManager = useMemo(() => {
+    return selectedManagerId 
+      ? { id: Number(selectedManagerId), name: selectedManagerName || "" } 
+      : null;
+  }, [selectedManagerId, selectedManagerName]);
+
+  const setSelectedManager = (mgr: { id: number; name: string } | null) => {
+    if (mgr) {
+      searchParams.set("mgrId", mgr.id.toString());
+      searchParams.set("mgrName", mgr.name);
+    } else {
+      searchParams.delete("mgrId");
+      searchParams.delete("mgrName");
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const setCurrentPage = (page: number) => {
+    searchParams.set("page", page.toString());
+    setSearchParams(searchParams, { replace: true });
+  };
+
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
@@ -232,12 +259,10 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
   const [managersOnPage, setManagersOnPage] = useState<ManagerListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const PAGE_SIZE = 10;
 
   // State for the detail view
-  const [selectedManager, setSelectedManager] = useState<{ id: number; name: string } | null>(null);
   const [activeManagerData, setActiveManagerData] = useState<ManagerData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -246,9 +271,11 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      // When changing pages, we are back to the list view
-      setSelectedManager(null);
-      setActiveManagerData(null);
+      // Only clear if we are navigating away from a selection back to the list
+      // But actually, we only want to clear activeManagerData if selectedManager is null
+      if (!selectedManager) {
+        setActiveManagerData(null);
+      }
 
       try {
         const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/getAll?page=${currentPage - 1}&size=${PAGE_SIZE}`);
@@ -278,7 +305,7 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
     };
 
     fetchData();
-  }, [currentPage]);
+  }, [currentPage]); // Re-fetch only when page changes
 
   // Effect to fetch the full details of a selected manager
   useEffect(() => {
@@ -318,21 +345,17 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
     };
 
     fetchManagerDetails();
-  }, [selectedManager]);
+  }, [selectedManager?.id, selectedManager?.name]);
 
-
-  if (loading) {
-    return <div className="p-10 text-center">Loading page...</div>;
-  }
-
-  if (error && !activeManagerData) {
-    return <div className="p-10 text-center text-red-600">Error: {error}</div>;
-  }
 
   // Non-admin view is not adapted for this data model
   if (!isAdmin) {
-    return <div className="p-10">This page is available for admins only.</div>;
+    return <div className="p-10 text-slate-500 font-medium">This page is available for admins only.</div>;
   }
+
+  const handleNavigateToProjects = (typeCode: string, count: number) => {
+    navigate(`/projects?mgrId=${selectedManager?.id}&type=${typeCode}&count=${count}`);
+  };
 
   return (
     <div className="min-h-full flex flex-col gap-6">
@@ -361,35 +384,51 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
         </div>
       </div>
 
-      {/* View Selected Manager Details */}
-      {selectedManager && (
+      {selectedManager ? (
         <>
-          {detailLoading && <div className="p-10 text-center">Loading manager details...</div>}
-          {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
-          {activeManagerData && <ManagerDetail data={activeManagerData} managerId={selectedManager.id} onNavigateToProjects={onNavigate} />}
+          {detailLoading && <div className="p-10 text-center text-slate-500 font-medium">Loading manager details...</div>}
+          {error && !detailLoading && <div className="p-10 text-center text-red-600 font-medium">Error: {error}</div>}
+          {activeManagerData && !detailLoading && (
+            <ManagerDetail 
+              data={activeManagerData} 
+              managerId={selectedManager.id} 
+              onNavigateToProjects={handleNavigateToProjects} 
+            />
+          )}
         </>
-      )}
-
-      {/* View List of Managers on Page */}
-      {!selectedManager && (
+      ) : (
         <div id="managers-grid" className="pm-card rounded-2xl overflow-hidden flex flex-col">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 p-5">
-            {managersOnPage.map((manager) => (
-              <ManagerCard
-                key={manager.reactKey}
-                manager={manager}
-                onSelect={() => setSelectedManager({ id: manager.managerId, name: manager.managerName })}
-              />
-            ))}
-          </div>
-          {totalRecords > PAGE_SIZE && <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalRecords / PAGE_SIZE)}
-            onPageChange={setCurrentPage}
-            totalItems={totalRecords}
-            pageSize={PAGE_SIZE}
-            scrollTargetId="managers-grid"
-          />}
+          {loading ? (
+            <div className="p-20 text-center">
+              <div className="inline-block w-8 h-8 border-4 border-primary-500/30 border-t-primary-600 rounded-full animate-spin mb-4"></div>
+              <p className="text-slate-500 font-medium">Loading managers list...</p>
+            </div>
+          ) : error ? (
+            <div className="p-20 text-center">
+              <p className="text-red-500 font-medium mb-2">Error loading managers</p>
+              <p className="text-slate-400 text-sm">{error}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 p-5">
+                {managersOnPage.map((manager) => (
+                  <ManagerCard
+                    key={manager.reactKey}
+                    manager={manager}
+                    onSelect={() => setSelectedManager({ id: manager.managerId, name: manager.managerName })}
+                  />
+                ))}
+              </div>
+              {totalRecords > PAGE_SIZE && <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalRecords / PAGE_SIZE)}
+                onPageChange={setCurrentPage}
+                totalItems={totalRecords}
+                pageSize={PAGE_SIZE}
+                scrollTargetId="managers-grid"
+              />}
+            </>
+          )}
         </div>
       )}
     </div>

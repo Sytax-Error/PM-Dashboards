@@ -38,21 +38,34 @@ function ClickableCell({ value, onClick, color = "indigo" }: ClickableCellProps)
   );
 }
 
-interface Props {
-  onNavigate: (page: string, projectId?: number) => void;
-  filterProjectType?: string;
-  filterCount?: number;
-  filterMgrId?: number;
-  onClearFilter?: () => void;
-}
+import { useSearchParams, useNavigate } from "react-router-dom";
 
-export default function ProjectsPage({ onNavigate, filterProjectType, filterCount, filterMgrId, onClearFilter }: Props) {
+export default function ProjectsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const filterProjectType = searchParams.get("type") || "";
+  const filterCount = Number(searchParams.get("count")) || 0;
+  const filterMgrId = Number(searchParams.get("mgrId")) || 0;
+  const currentPage = Number(searchParams.get("page")) || 1;
+
+  const setCurrentPage = (page: number) => {
+    searchParams.set("page", page.toString());
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const onClearFilter = () => {
+    if (filterMgrId) {
+      navigate(-1);
+    } else {
+      setSearchParams({});
+    }
+  };
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const pageSize = 10;
 
@@ -72,8 +85,11 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
         const apiResult = await response.json();
         if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch projects.');
 
+        const total = apiResult.totalRecords || filterCount || apiResult.data.length;
+        const isFullList = apiResult.data.length >= total && total > 0;
+        
         const mappedProjects = apiResult.data.map((p: any, index: number) => ({
-          srNo: (apiResult.data.length > pageSize ? 0 : pageIdx * pageSize) + index + 1,
+          srNo: (isFullList ? 0 : pageIdx * pageSize) + index + 1,
           projectNumber: p.projectCd || p.projectNumber || p.prjNo || "N/A",
           customerName: p.customerName || p.prjNm || "N/A",
           projectType: p.prjType || p.prjTypCode || (filterProjectType || "Unknown"),
@@ -92,7 +108,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
         }));
 
         setProjects(mappedProjects);
-        setTotalRecords(apiResult.totalRecords || filterCount || apiResult.data.length);
+        setTotalRecords(total);
       } catch (e: any) {
         setError(e.message || "Failed to fetch projects.");
       } finally {
@@ -139,9 +155,10 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
     ? filteredProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     : filteredProjects;
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, filterProjectType, columnFilters]);
+  // No longer need this separate effect that triggers secondary navigates
+  // useEffect(() => {
+  //   setCurrentPage(1);
+  // }, [search, filterProjectType, columnFilters]);
 
   return (
     <div className="min-h-full flex flex-col gap-6">
@@ -174,7 +191,11 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
               type="text"
               placeholder="Search by project number or customer..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                searchParams.set("page", "1");
+                setSearchParams(searchParams, { replace: true });
+              }}
               className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white"
             />
           </div>
@@ -203,7 +224,15 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
         </div>
       )}
 
-      <ColumnFilterPanel fields={filterFields} filters={columnFilters} onChange={setColumnFilters} />
+      <ColumnFilterPanel 
+        fields={filterFields} 
+        filters={columnFilters} 
+        onChange={(newFilters) => {
+          setColumnFilters(newFilters);
+          searchParams.set("page", "1");
+          setSearchParams(searchParams);
+        }} 
+      />
 
       {/* Legend */}
       <div className="pm-card rounded-2xl p-4 flex flex-wrap gap-4 text-xs">
@@ -226,14 +255,20 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
         </div>
       </div>
 
-      {/* Loading/Error States */}
-      {loading && <div className="p-10 text-center">Loading filtered projects...</div>}
-      {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
+      {/* Loading/Error States - Rendered in place of the table when initial loading */}
+      {error && <div className="p-10 text-center text-red-600 font-medium">Error: {error}</div>}
 
-      {/* Table */}
-      {!loading && !error && (
-        <div className="pm-card rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto scroll-table">
+      {/* Table Container */}
+      <div className={`pm-card rounded-2xl overflow-hidden relative ${loading ? "opacity-60" : ""}`}>
+        {loading && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px]">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-4 border-primary-500/30 border-t-primary-600 rounded-full animate-spin"></div>
+              <span className="text-xs font-bold text-primary-700">Refreshing...</span>
+            </div>
+          </div>
+        )}
+        <div className="overflow-x-auto scroll-table">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-800 text-white border-b border-slate-700">
@@ -271,7 +306,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                     </td>
 
                     {/* ── Clickable: PO/WO (Green) ── */}
-                    <ClickableCell value={project.noOfPOs} color="green" onClick={() => onNavigate("poDetails", project.projectId)} />
+                    <ClickableCell value={project.noOfPOs} color="green" onClick={() => navigate(`/projects/${project.projectId}/po`)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/40 text-green-800 font-medium">
                       {formatCurrency(project.poAmount)}
                     </td>
@@ -280,17 +315,17 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                     <ClickableCell
                       value={project.noOfInvoiceReceived}
                       color="blue"
-                      onClick={() => onNavigate("invoiceReceived", project.projectId)}
+                      onClick={() => navigate(`/projects/${project.projectId}/invoice-received`)}
                     />
 
                     {/* ── Clickable: Tax Invoice (Purple) ── */}
-                    <ClickableCell value={project.noOfTaxInvoice} color="purple" onClick={() => onNavigate("taxInvoice", project.projectId)} />
+                    <ClickableCell value={project.noOfTaxInvoice} color="purple" onClick={() => navigate(`/projects/${project.projectId}/tax-invoice`)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-purple-50/40 text-purple-800 font-medium">
                       {formatCurrency(project.taxInvoiceAmount)}
                     </td>
 
                     {/* ── Clickable: Invoice Booked (Orange) ── */}
-                    <ClickableCell value={project.noOfInvoiceBooked} color="orange" onClick={() => onNavigate("invoiceBooked", project.projectId)} />
+                    <ClickableCell value={project.noOfInvoiceBooked} color="orange" onClick={() => navigate(`/projects/${project.projectId}/invoice-booked`)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-orange-50/40 text-orange-800 font-medium">
                       {formatCurrency(project.invoiceAmount)}
                     </td>
@@ -321,7 +356,6 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
             pageSize={pageSize}
           />
         </div>
-      )}
-    </div>
-  );
-}
+      </div>
+    );
+  }
