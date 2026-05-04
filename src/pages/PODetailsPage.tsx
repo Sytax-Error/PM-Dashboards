@@ -1,41 +1,87 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { poDetails } from "../data/mockData";
 import Pagination from "../components/Pagination";
 import ColumnFilterPanel from "../components/ColumnFilterPanel";
 import { applyColumnFilters, type ColumnFilters, type FilterField } from "../utils/tableFilters";
 
-interface Props { onBack: () => void; }
+interface Props {
+  onBack: () => void;
+  projectId?: number | null;
+}
 
 function formatCurrency(num: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(num);
 }
 
-export default function PODetailsPage({ onBack }: Props) {
+export default function PODetailsPage({ onBack, projectId }: Props) {
+  const [poData, setPoData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterProject, setFilterProject] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
+
+  useEffect(() => {
+    if (projectId) {
+      const fetchPODetails = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await fetch(`http://10.23.124.23:8080/api/PM/polist/project/${projectId}`);
+          if (!response.ok) throw new Error('Network response was not ok');
+          const apiResult = await response.json();
+
+          if (!apiResult.data) throw new Error('Failed to fetch PO details.');
+
+          const mapped = apiResult.data.map((item: any, idx: number) => ({
+            srNo: idx + 1,
+            headerId: item.headerId || "-",
+            projectNumber: item.projectNo || "N/A",
+            vendorId: item.vendorId || "-",
+            vendorName: item.vendorName || "N/A",
+            poWoNumber: item.finalPoNo || "N/A",
+            poDate: item.poDate ? new Date(item.poDate).toLocaleDateString("en-IN") : "N/A",
+            startDate: item.frDate ? new Date(item.frDate).toLocaleDateString("en-IN") : "N/A",
+            endDate: item.toDate ? new Date(item.toDate).toLocaleDateString("en-IN") : "N/A",
+            totalPoAmount: item.total || 0,
+            approvalStatus: item.approvalStatus || "N/A",
+            createdDate: item.createdDate ? new Date(item.createdDate).toLocaleDateString("en-IN") : "N/A",
+          }));
+          setPoData(mapped);
+        } catch (e: any) {
+          setError(e.message || "Failed to load PO details.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchPODetails();
+    } else {
+      setPoData(poDetails);
+    }
+  }, [projectId]);
   const filterFields: FilterField[] = [
     { key: "srNo", label: "Sr.No." },
-    { key: "projectNumber", label: "Project Number" },
-    { key: "vendorName", label: "Vendor Name" },
-    { key: "poWoNumber", label: "PO/WO Number" },
-    { key: "poDate", label: "PO Date" },
-    { key: "startDate", label: "Start Date" },
-    { key: "endDate", label: "End Date" },
-    { key: "totalPoAmount", label: "Total Amount" },
+    { key: "headerId", label: "Header ID" },
+    { key: "projectNumber", label: "Project No" },
+    { key: "vendorId", label: "Vendor ID" },
+    { key: "vendorName", label: "Vendor" },
+    { key: "poWoNumber", label: "PO No" },
+    { key: "approvalStatus", label: "Status" },
+    { key: "totalPoAmount", label: "Amount" },
+    { key: "createdDate", label: "Created Date" },
   ];
 
-  const projects = useMemo(() => [...new Set(poDetails.map((d) => d.projectNumber))], []);
+  const projects = useMemo(() => [...new Set(poData.map((d) => d.projectNumber))], [poData]);
 
   const filteredData = useMemo(() => {
-    let data = poDetails;
+    let data = poData;
     if (search) {
       const s = search.toLowerCase();
       data = data.filter((d) => d.poWoNumber.toLowerCase().includes(s) || d.vendorName.toLowerCase().includes(s));
     }
     if (filterProject) data = data.filter((d) => d.projectNumber === filterProject);
     return applyColumnFilters(data, columnFilters);
-  }, [search, filterProject, columnFilters]);
+  }, [search, filterProject, columnFilters, poData]);
 
   const totalAmount = filteredData.reduce((sum, d) => sum + d.totalPoAmount, 0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,52 +111,74 @@ export default function PODetailsPage({ onBack }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="pm-card rounded-2xl p-5"><p className="text-sm text-slate-500">Total POs/WOs</p><p className="text-2xl font-bold text-slate-900 mt-1">{filteredData.length}</p></div>
-        <div className="pm-card rounded-2xl p-5"><p className="text-sm text-slate-500">Total Amount</p><p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalAmount)}</p></div>
-      </div>
+      {/* Loading/Error States */}
+      {loading && <div className="p-10 text-center">Loading PO details...</div>}
+      {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
 
-      <ColumnFilterPanel fields={filterFields} filters={columnFilters} onChange={setColumnFilters} />
+      {!loading && !error && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="pm-card rounded-2xl p-5"><p className="text-sm text-slate-500">Total POs/WOs</p><p className="text-2xl font-bold text-slate-900 mt-1">{filteredData.length}</p></div>
+            <div className="pm-card rounded-2xl p-5"><p className="text-sm text-slate-500">Total Amount</p><p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalAmount)}</p></div>
+          </div>
 
-      <div className="pm-card rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto scroll-table">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-green-700 text-white">
-                <th className="px-4 py-3.5 text-left font-bold w-16">Sr.No.</th>
-                <th className="px-4 py-3.5 text-left font-bold">Project Number</th>
-                <th className="px-4 py-3.5 text-left font-bold">Vendor Name</th>
-                <th className="px-4 py-3.5 text-left font-bold">PO/WO Number</th>
-                <th className="px-4 py-3.5 text-left font-bold">PO Date</th>
-                <th className="px-4 py-3.5 text-left font-bold">Start Date</th>
-                <th className="px-4 py-3.5 text-left font-bold">End Date</th>
-                <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Total Po Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {paginatedData.map((d) => (
-                <tr key={d.srNo} className={`hover:bg-green-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
-                  <td className="px-4 py-3.5 text-slate-600">{d.srNo}</td>
-                  <td className="px-4 py-3.5 text-primary-700 font-semibold">{d.projectNumber}</td>
-                  <td className="px-4 py-3.5 text-slate-700">{d.vendorName}</td>
-                  <td className="px-4 py-3.5 text-slate-700 font-medium">{d.poWoNumber}</td>
-                  <td className="px-4 py-3.5 text-slate-600">{d.poDate}</td>
-                  <td className="px-4 py-3.5 text-slate-600">{d.startDate}</td>
-                  <td className="px-4 py-3.5 text-slate-600">{d.endDate}</td>
-                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-green-700">{formatCurrency(d.totalPoAmount)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-green-50 font-bold border-t-2 border-green-200">
-                <td colSpan={7} className="px-4 py-3.5 text-right text-slate-700">Total Amount</td>
-                <td className="px-4 py-3.5 text-right text-slate-900 border-l border-slate-200/60 tabular-nums">{formatCurrency(totalAmount)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredData.length} pageSize={pageSize} />
-      </div>
+          <ColumnFilterPanel fields={filterFields} filters={columnFilters} onChange={setColumnFilters} />
+
+          <div className="pm-card rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto scroll-table">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-green-700 text-white">
+                    <th className="px-4 py-3.5 text-left font-bold w-14">Sr.No.</th>
+                    <th className="px-4 py-3.5 text-left font-bold">Header ID</th>
+                    <th className="px-4 py-3.5 text-left font-bold">Project No</th>
+                    <th className="px-4 py-3.5 text-left font-bold">Vendor ID</th>
+                    <th className="px-4 py-3.5 text-left font-bold">Vendor Name</th>
+                    <th className="px-4 py-3.5 text-left font-bold">PO Number</th>
+                    <th className="px-4 py-3.5 text-left font-bold">PO Date</th>
+                    <th className="px-4 py-3.5 text-left font-bold">Start Date</th>
+                    <th className="px-4 py-3.5 text-left font-bold">End Date</th>
+                    <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Total Amount</th>
+                    <th className="px-4 py-3.5 text-center font-bold border-l border-white/20">Status</th>
+                    <th className="px-4 py-3.5 text-left font-bold border-l border-white/20 text-xs">Created Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedData.map((d) => (
+                    <tr key={d.srNo} className={`hover:bg-green-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                      <td className="px-4 py-3.5 text-slate-600">{d.srNo}</td>
+                      <td className="px-4 py-3.5 text-slate-500 font-mono text-xs">{d.headerId}</td>
+                      <td className="px-4 py-3.5 text-primary-700 font-semibold">{d.projectNumber}</td>
+                      <td className="px-4 py-3.5 text-slate-500 font-mono text-xs">{d.vendorId}</td>
+                      <td className="px-4 py-3.5 text-slate-700">{d.vendorName}</td>
+                      <td className="px-4 py-3.5 text-slate-700 font-medium">{d.poWoNumber}</td>
+                      <td className="px-4 py-3.5 text-slate-600">{d.poDate}</td>
+                      <td className="px-4 py-3.5 text-slate-600">{d.startDate}</td>
+                      <td className="px-4 py-3.5 text-slate-600">{d.endDate}</td>
+                      <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-green-700">{formatCurrency(d.totalPoAmount)}</td>
+                      <td className="px-4 py-3.5 text-center border-l border-slate-200/60">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${d.approvalStatus === 'DISPATCHED' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                          {d.approvalStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-500 text-[10px] border-l border-slate-200/60 leading-tight">{d.createdDate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-green-50 font-bold border-t-2 border-green-200">
+                    <td colSpan={9} className="px-4 py-3.5 text-right text-slate-700">Total Amount</td>
+                    <td className="px-4 py-3.5 text-right text-slate-900 border-l border-slate-200/60 tabular-nums">{formatCurrency(totalAmount)}</td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredData.length} pageSize={pageSize} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

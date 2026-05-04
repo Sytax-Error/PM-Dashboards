@@ -38,7 +38,7 @@ function ClickableCell({ value, onClick, color = "blue" }: ClickableCellProps) {
 }
 
 interface Props {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, projectId?: number) => void;
   filterProjectType?: string;
   filterCount?: number;
   filterMgrId?: number;
@@ -70,10 +70,10 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
           // For now assuming the API returns fields that match our usage
           const mappedProjects = apiResult.data.map((p: any, index: number) => ({
             srNo: index + 1,
-            projectNumber: p.projectCd || "N/A",
-            customerName: p.customerName || "N/A",
-            projectType: p.prjType || filterProjectType,
-            budgetAmount: p.prjBudgetNo || 0,
+            projectNumber: p.projectCd || p.projectNumber || p.prjNo || "N/A",
+            customerName: p.customerName || p.prjNm || "N/A",
+            projectType: p.prjType || p.prjTypCode || filterProjectType,
+            budgetAmount: p.prjBudgetNo || p.projectAbp || 0,
             receivedAmount: p.amountReceived || 0,
             noOfPOs: p.noOfPo || 0,
             poAmount: p.poAmount || 0,
@@ -84,6 +84,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
             noOfTaxInvoice: p.noOfTaxInvoice || 0,
             taxInvoiceAmount: p.totalTaxInvoiceAmount || 0,
             ledgerBalance: (p.totalInvoiceAmount || 0) - (p.totalAmountPaid || 0),
+            projectId: p.projectId || p.headerId,
           }));
 
           setProjects(mappedProjects);
@@ -252,9 +253,8 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                 {paginatedProjects.map((project) => (
                   <tr
                     key={project.srNo}
-                    className={`transition-colors hover:bg-primary-50/30 ${
-                      project.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/40"
-                    }`}
+                    className={`transition-colors hover:bg-primary-50/30 ${project.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/40"
+                      }`}
                   >
                     <td className="px-4 py-3.5 text-slate-600 font-medium">{project.srNo}</td>
                     <td className="px-4 py-3.5 text-primary-700 font-bold">{project.projectNumber}</td>
@@ -267,7 +267,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                     </td>
 
                     {/* ── Clickable: PO/WO ── */}
-                    <ClickableCell value={project.noOfPOs} color="green" onClick={() => onNavigate("poDetails")} />
+                    <ClickableCell value={project.noOfPOs} color="green" onClick={() => onNavigate("poDetails", project.projectId)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/60 text-green-800 font-medium">
                       {formatCurrency(project.poAmount)}
                     </td>
@@ -276,11 +276,11 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                     <ClickableCell
                       value={project.noOfInvoiceReceived}
                       color="blue"
-                      onClick={() => onNavigate("invoiceReceived")}
+                      onClick={() => onNavigate("invoiceReceived", project.projectId)}
                     />
 
                     {/* ── Clickable: Invoice Booked ── */}
-                    <ClickableCell value={project.noOfInvoiceBooked} color="yellow" onClick={() => onNavigate("invoiceBooked")} />
+                    <ClickableCell value={project.noOfInvoiceBooked} color="yellow" onClick={() => onNavigate("invoiceBooked", project.projectId)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-amber-50/60 text-amber-800 font-medium">
                       {formatCurrency(project.invoiceAmount)}
                     </td>
@@ -290,7 +290,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                     </td>
 
                     {/* ── Clickable: Tax Invoice ── */}
-                    <ClickableCell value={project.noOfTaxInvoice} color="blue" onClick={() => onNavigate("taxInvoice")} />
+                    <ClickableCell value={project.noOfTaxInvoice} color="blue" onClick={() => onNavigate("taxInvoice", project.projectId)} />
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-blue-50/60 text-blue-800 font-medium">
                       {formatCurrency(project.taxInvoiceAmount)}
                     </td>

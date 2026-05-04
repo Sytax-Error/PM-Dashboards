@@ -16,6 +16,7 @@ function AppContent() {
   const [filterProjectType, setFilterProjectType] = useState<string>("");
   const [filterCount, setFilterCount] = useState<number>(0);
   const [filterMgrId, setFilterMgrId] = useState<number>(0);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -44,7 +45,10 @@ function AppContent() {
       case "projects":
         return (
           <ProjectsPage
-            onNavigate={setActivePage}
+            onNavigate={(page, projectId) => {
+              if (projectId) setSelectedProjectId(projectId);
+              setActivePage(page);
+            }}
             filterProjectType={filterProjectType}
             filterCount={filterCount}
             filterMgrId={filterMgrId}
@@ -52,13 +56,13 @@ function AppContent() {
           />
         );
       case "poDetails":
-        return <PODetailsPage onBack={() => setActivePage("projects")} />;
+        return <PODetailsPage projectId={selectedProjectId} onBack={() => setActivePage("projects")} />;
       case "invoiceReceived":
-        return <InvoiceReceivedPage onBack={() => setActivePage("projects")} />;
+        return <InvoiceReceivedPage projectId={selectedProjectId} onBack={() => setActivePage("projects")} />;
       case "invoiceBooked":
-        return <InvoiceBookedPage onBack={() => setActivePage("projects")} />;
+        return <InvoiceBookedPage projectId={selectedProjectId} onBack={() => setActivePage("projects")} />;
       case "taxInvoice":
-        return <TaxInvoicePage onBack={() => setActivePage("projects")} />;
+        return <TaxInvoicePage projectId={selectedProjectId} onBack={() => setActivePage("projects")} />;
       default:
         return <HomePage onNavigate={setActivePage} />;
     }
