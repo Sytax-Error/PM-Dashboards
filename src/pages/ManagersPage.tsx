@@ -32,7 +32,19 @@ interface ApiResponse {
   totalRecords: number;
 }
 
-// Internal data structure
+// Internal data structure for the list view items
+interface ManagerListItem {
+  managerId: number;
+  managerName: string;
+  // Unique key for React rendering
+  reactKey: string;
+  projects: {
+    type: string;
+    count: number;
+  }[];
+}
+
+// Internal data structure for the detail view
 interface ManagerData {
   managerName: string;
   projects: {
@@ -46,11 +58,9 @@ interface ManagerData {
 // ─── Manager Card (used only for admin list view) ─────────────────────────────
 function ManagerCard({
   manager,
-  isSelected,
   onSelect,
 }: {
-  manager: ManagerData;
-  isSelected: boolean;
+  manager: ManagerListItem;
   onSelect: () => void;
 }) {
   const total = manager.projects.reduce((s, p) => s + p.count, 0);
@@ -60,39 +70,30 @@ function ManagerCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full text-left rounded-2xl p-5 transition-all cursor-pointer border ${
-        isSelected
-          ? "bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-600/25"
-          : "pm-card hover:border-primary-300 hover:shadow-md"
-      }`}
+      className="w-full text-left rounded-2xl p-5 transition-all cursor-pointer border pm-card hover:border-primary-300 hover:shadow-md"
     >
       <div className="flex items-center gap-3 mb-3">
-        <div className={`w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0 ${
-          isSelected ? "bg-white/20 text-white" : "bg-primary-100 text-primary-700"
-        }`}>
+        <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold shrink-0 bg-primary-100 text-primary-700">
           {manager.managerName.charAt(0)}
         </div>
         <div className="min-w-0">
-          <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-slate-900"}`}>
+          <p className="font-semibold text-sm truncate text-slate-900">
             {manager.managerName}
+          </p>
+          <p className="text-xs text-slate-500 truncate">
+            {manager.projects[0]?.type} {/* Shows the type from the specific record */}
           </p>
         </div>
       </div>
       <div className="flex items-center justify-between mt-2">
         <div>
-          <p className={`text-2xl font-bold ${isSelected ? "text-white" : "text-slate-900"}`}>
-            {total.toLocaleString()}
+          <p className="text-2xl font-bold text-slate-900">
+            {manager.projects[0]?.count.toLocaleString()}
           </p>
-          <p className={`text-xs mt-0.5 ${isSelected ? "text-primary-100" : "text-slate-500"}`}>
-            total projects
+          <p className="text-xs mt-0.5 text-slate-500">
+            projects in this record
           </p>
         </div>
-        {topType && <div className={`text-right ${isSelected ? "text-primary-100" : "text-slate-500"}`}>
-          <p className={`text-xs font-medium ${isSelected ? "text-white" : "text-slate-700"}`}>
-            Top: {topType.type}
-          </p>
-          <p className="text-xs">{topType.count} projects</p>
-        </div>}
       </div>
     </button>
   );
@@ -190,13 +191,9 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
 
       {/* Right panel — sticky on desktop */}
       <div className="space-y-5 lg:sticky lg:top-2 lg:self-start">
-        {/* Top chart */}
         <div className="pm-card rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-slate-700">Top Project Types</h3>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Top 8</span>
-          </div>
-          <div className="h-48">
+          <h3 className="text-sm font-bold text-slate-700">Top Project Types</h3>
+          <div className="h-48 mt-3">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProjectsData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
@@ -214,45 +211,6 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 space-y-1.5">
-            {topProjectsData.slice(0, 4).map((entry, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.highlight ? "#eab308" : COLORS[idx % COLORS.length] }} />
-                  <span className="truncate text-slate-600">{entry.type}</span>
-                </div>
-                <span className="font-bold text-slate-800 shrink-0 ml-2">{entry.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats card */}
-        <div className="rounded-2xl p-5 bg-gradient-to-br from-primary-600 to-indigo-700 text-white shadow-lg shadow-primary-600/25">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary-100">Summary</p>
-          <p className="text-xl font-bold mt-1 truncate">{data.managerName}</p>
-          <div className="mt-5 space-y-3">
-            <div className="flex justify-between items-center border-b border-white/20 pb-3">
-              <span className="text-sm text-primary-100">Unique Project Types</span>
-              <span className="text-lg font-bold">{data.projects.length}</span>
-            </div>
-            <div className="flex justify-between items-center border-b border-white/20 pb-3">
-              <span className="text-sm text-primary-100">Total Assignments</span>
-              <span className="text-lg font-bold">{total.toLocaleString()}</span>
-            </div>
-            <div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-primary-100">Top 3 share</span>
-                <span className="font-bold">{topSharePct}%</span>
-              </div>
-              <div className="mt-2 h-1.5 w-full rounded-full bg-white/15 overflow-hidden">
-                <div
-                  className="h-full bg-yellow-300 rounded-full transition-all"
-                  style={{ width: `${topSharePct}%` }}
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -268,47 +226,51 @@ interface ManagersPageProps {
 export default function ManagersPage({ onNavigate }: ManagersPageProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const [managersData, setManagersData] = useState<ManagerData[]>([]);
+  
+  // State for the paginated list
+  const [managersOnPage, setManagersOnPage] = useState<ManagerListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const PAGE_SIZE = 10;
 
+  // State for the detail view
+  const [selectedManager, setSelectedManager] = useState<{ id: number; name: string } | null>(null);
+  const [activeManagerData, setActiveManagerData] = useState<ManagerData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Effect to fetch the list of manager records for the current page
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
+      // When changing pages, we are back to the list view
+      setSelectedManager(null);
+      setActiveManagerData(null);
+
       try {
         const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/getAll?page=${currentPage - 1}&size=${PAGE_SIZE}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
+        
         const apiResult: ApiResponse = await response.json();
+        if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch project data from API.');
 
-        if (apiResult.status !== 'SUCCESS' || !apiResult.data) {
-          throw new Error('Failed to fetch project data from API.');
-        }
-
-        // DEMONSTRATION: Do not group managers. Create a card for each project record.
-        // This will show 10 items, but with duplicate manager cards.
-        const managerDataFromApi = apiResult.data.map((project, index) => ({
+        const managerListFromApi: ManagerListItem[] = apiResult.data.map((project) => ({
+          managerId: project.prjMgrId,
           managerName: project.prjMgrNm,
-          // Add a unique key for React rendering, since manager name is not unique here
-          reactKey: `${project.prjMgrNm}-${index}`,
+          reactKey: project.headerId.toString(), // Use a truly unique ID from the record
           projects: [{
             type: project.prjTypDescription,
             count: project.noOfProject,
           }],
         }));
 
-        setManagersData(managerDataFromApi);
+        setManagersOnPage(managerListFromApi);
         setTotalRecords(apiResult.totalRecords);
 
       } catch (e: any) {
-        setError(e.message || "Failed to fetch project data. Please try again later.");
-        console.error(e);
+        setError(e.message || "Failed to fetch project data.");
       } finally {
         setLoading(false);
       }
@@ -317,59 +279,59 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
     fetchData();
   }, [currentPage]);
 
-  const [selectedManager, setSelectedManager] = useState<string | null>(null);
-
-  const activeManagerData = useMemo(() => {
-    if (!selectedManager) return null;
-    // This logic is now more complex because the managerName is not unique
-    return managersData.find((m) => m.managerName === selectedManager) || null;
-  }, [selectedManager, managersData]);
-
-  const userManagerData = useMemo(() => {
-    if (!isAdmin && user?.managerName) {
-      return managersData.find((m) => m.managerName === user.managerName) || null;
-    }
-    return null;
-  }, [isAdmin, user, managersData]);
-
+  // Effect to fetch the full details of a selected manager
   useEffect(() => {
-    if (!isAdmin && userManagerData) {
-      setSelectedManager(userManagerData.managerName);
+    if (!selectedManager) {
+      setActiveManagerData(null);
+      return;
     }
-  }, [isAdmin, userManagerData]);
+
+    const fetchManagerDetails = async () => {
+      setDetailLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/manager/${selectedManager.id}`);
+        if (!response.ok) throw new Error(`Network error fetching details for manager ${selectedManager.id}`);
+        
+        const apiResult: ApiResponse = await response.json();
+        if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('API did not return success for manager details.');
+
+        const projects = apiResult.data.map(p => ({
+          type: p.prjTypDescription,
+          count: p.noOfProject
+        }));
+
+        const managerDetailData: ManagerData = {
+          managerName: selectedManager.name,
+          projects: projects
+        };
+
+        setActiveManagerData(managerDetailData);
+
+      } catch (e: any) {
+        setError(e.message || "Failed to fetch manager details.");
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
+    fetchManagerDetails();
+  }, [selectedManager]);
 
 
   if (loading) {
-    return (
-      <div className="min-h-full flex items-center justify-center">
-        <div className="pm-card rounded-2xl p-10 text-center max-w-sm w-full">
-          <p className="font-semibold text-slate-700">Loading project data...</p>
-        </div>
-      </div>
-    );
+    return <div className="p-10 text-center">Loading page...</div>;
   }
 
-  if (error) {
-    return (
-      <div className="min-h-full flex items-center justify-center">
-        <div className="pm-card rounded-2xl p-10 text-center max-w-sm w-full">
-           <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          <p className="font-semibold text-red-700">Error</p>
-          <p className="text-sm text-slate-500 mt-1">{error}</p>
-        </div>
-      </div>
-    );
+  if (error && !activeManagerData) {
+     return <div className="p-10 text-center text-red-600">Error: {error}</div>;
   }
 
+  // Non-admin view is not adapted for this data model
   if (!isAdmin) {
-    // ... (user view logic remains the same, but is likely broken)
-    return <div>User view is currently not supported with this data structure.</div>;
+     return <div className="p-10">This page is available for admins only.</div>;
   }
-
+  
   return (
     <div className="min-h-full flex flex-col gap-6">
       <div className="pm-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -377,38 +339,56 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
           <h2 className="text-xl font-bold text-slate-900">Manager Wise Projects Details</h2>
           <p className="text-sm text-slate-500 mt-0.5">
             {selectedManager
-              ? `Viewing details for ${selectedManager}`
-              : `Showing 10 records per page. Note the duplicate managers.`}
+              ? `Viewing details for ${selectedManager.name}`
+              : `Showing ${managersOnPage.length} records on this page. Select a record to see full details.`}
           </p>
         </div>
-        {/* ... (header buttons) */}
+        <div className="flex items-center gap-2">
+          {selectedManager && (
+            <button
+              type="button"
+              onClick={() => setSelectedManager(null)} // This takes you back to the list
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to List
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* View Selected Manager Details */}
+      {selectedManager && (
+        <>
+          {detailLoading && <div className="p-10 text-center">Loading manager details...</div>}
+          {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
+          {activeManagerData && <ManagerDetail data={activeManagerData} onNavigateToProjects={onNavigate} />}
+        </>
+      )}
+
+      {/* View List of Managers on Page */}
       {!selectedManager && (
         <div id="managers-grid" className="pm-card rounded-2xl overflow-hidden flex flex-col">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 p-5">
-            {managersData.map((manager: any) => (
+            {managersOnPage.map((manager) => (
               <ManagerCard
-                key={manager.reactKey} // Use the unique key we created
+                key={manager.reactKey}
                 manager={manager}
-                isSelected={false}
-                onSelect={() => setSelectedManager(manager.managerName)}
+                onSelect={() => setSelectedManager({ id: manager.managerId, name: manager.managerName })}
               />
             ))}
           </div>
-          <Pagination
+          {totalRecords > PAGE_SIZE && <Pagination
             currentPage={currentPage}
             totalPages={Math.ceil(totalRecords / PAGE_SIZE)}
             onPageChange={setCurrentPage}
             totalItems={totalRecords}
             pageSize={PAGE_SIZE}
             scrollTargetId="managers-grid"
-          />
+          />}
         </div>
-      )}
-
-      {selectedManager && activeManagerData && (
-        <ManagerDetail data={activeManagerData} onNavigateToProjects={onNavigate} />
       )}
     </div>
   );
