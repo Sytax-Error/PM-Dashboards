@@ -132,7 +132,7 @@ export default function TaxInvoicePage({ onBack, projectId }: Props) {
             <div className="overflow-x-auto scroll-table">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-blue-700 text-white">
+                  <tr className="bg-purple-700 text-white">
                     <th className="px-4 py-3.5 text-left font-bold w-14">Sr.No</th>
                     <th className="px-4 py-3.5 text-left font-bold">Header ID</th>
                     <th className="px-4 py-3.5 text-left font-bold">Project Number</th>
@@ -147,7 +147,7 @@ export default function TaxInvoicePage({ onBack, projectId }: Props) {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.map((d) => (
-                    <tr key={d.srNo} className={`hover:bg-blue-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                    <tr key={d.srNo} className={`hover:bg-purple-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
                       <td className="px-4 py-3.5 text-slate-600">{d.srNo}</td>
                       <td className="px-4 py-3.5 text-slate-500 font-mono text-xs">{d.headerId}</td>
                       <td className="px-4 py-3.5 text-primary-700 font-semibold">{d.projectNumber}</td>
@@ -159,7 +159,7 @@ export default function TaxInvoicePage({ onBack, projectId }: Props) {
                         <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${d.status === "FINAL" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>{d.status}</span>
                       </td>
                       <td className="px-4 py-3.5 text-slate-600">{d.stateDescription}</td>
-                      <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-blue-700">{formatCurrency(d.taxInvoiceAmount)}</td>
+                      <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-purple-700">{formatCurrency(d.taxInvoiceAmount)}</td>
                     </tr>
                   ))}
                 </tbody>

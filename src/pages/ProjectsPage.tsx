@@ -15,14 +15,15 @@ function formatCurrency(num: number): string {
 interface ClickableCellProps {
   value: number;
   onClick: () => void;
-  color?: "green" | "blue" | "yellow";
+  color?: "green" | "blue" | "purple" | "orange";
 }
 
-function ClickableCell({ value, onClick, color = "blue" }: ClickableCellProps) {
+function ClickableCell({ value, onClick, color = "indigo" }: ClickableCellProps) {
   const colorClasses = {
-    green: "bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
-    blue: "bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
-    yellow: "bg-amber-100 text-amber-700 hover:bg-amber-200 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
+    green: "bg-green-100/50 text-green-700 hover:bg-green-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
+    blue: "bg-blue-100/50 text-blue-700 hover:bg-blue-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
+    purple: "bg-purple-100/50 text-purple-700 hover:bg-purple-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
+    orange: "bg-orange-100/50 text-orange-700 hover:bg-orange-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
   };
 
   return (
@@ -207,18 +208,22 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
 
       {/* Legend */}
       <div className="pm-card rounded-2xl p-4 flex flex-wrap gap-4 text-xs">
-        <span className="text-slate-600 font-semibold">Click to view details:</span>
+        <span className="text-slate-600 font-semibold uppercase tracking-wider">Navigation Guide:</span>
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-green-100 border border-green-300" />
-          <span className="text-slate-600">No. Of PO/WO's</span>
+          <div className="w-3 h-3 rounded-sm bg-green-500" />
+          <span className="text-slate-600 font-medium">PO/WO Details</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-blue-100 border border-blue-300" />
-          <span className="text-slate-600">Invoice Received / Tax Invoice</span>
+          <div className="w-3 h-3 rounded-sm bg-blue-500" />
+          <span className="text-slate-600 font-medium">Bill Desk Details</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded bg-amber-100 border border-amber-300" />
-          <span className="text-slate-600">Invoice Booked</span>
+          <div className="w-3 h-3 rounded-sm bg-purple-500" />
+          <span className="text-slate-600 font-medium">Tax Invoices</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-orange-500" />
+          <span className="text-slate-600 font-medium">Booked Invoices</span>
         </div>
       </div>
 
@@ -232,21 +237,21 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
           <div className="overflow-x-auto scroll-table">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-800 text-white">
-                  <th className="px-4 py-3.5 text-left font-bold w-14">Sr.No.</th>
-                  <th className="px-4 py-3.5 text-left font-bold">Project Number</th>
-                  <th className="px-4 py-3.5 text-left font-bold">Customer Name</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Budget Amount</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Received Amount</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-green-700">No.Of PO/Wo's</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-green-700">PO Amount</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-blue-700">No.of Invoice Received at Billdesk</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-amber-700">No.Of Invoice booked</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-amber-700">Invoice Amount</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Amount Paid</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-blue-700">No.Of Tax Invoice Genrated</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20 bg-blue-700">Tax Invoice Amount</th>
-                  <th className="px-4 py-3.5 text-right font-bold border-l border-white/20">Ledger Balance</th>
+                <tr className="bg-slate-800 text-white border-b border-slate-700">
+                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Sr.No.</th>
+                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Project No</th>
+                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Customer</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Budget</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Received</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Count</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Amt</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-blue-700 uppercase">Billdesk</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Count</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Amt</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Booked</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Inv Amt</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Paid</th>
+                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -266,33 +271,33 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
                       {formatCurrency(project.receivedAmount)}
                     </td>
 
-                    {/* ── Clickable: PO/WO ── */}
+                    {/* ── Clickable: PO/WO (Green) ── */}
                     <ClickableCell value={project.noOfPOs} color="green" onClick={() => onNavigate("poDetails", project.projectId)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/60 text-green-800 font-medium">
+                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/40 text-green-800 font-medium">
                       {formatCurrency(project.poAmount)}
                     </td>
 
-                    {/* ── Clickable: Invoice Received ── */}
+                    {/* ── Clickable: Bill Desk (Blue) ── */}
                     <ClickableCell
                       value={project.noOfInvoiceReceived}
                       color="blue"
                       onClick={() => onNavigate("invoiceReceived", project.projectId)}
                     />
 
-                    {/* ── Clickable: Invoice Booked ── */}
-                    <ClickableCell value={project.noOfInvoiceBooked} color="yellow" onClick={() => onNavigate("invoiceBooked", project.projectId)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-amber-50/60 text-amber-800 font-medium">
+                    {/* ── Clickable: Tax Invoice (Purple) ── */}
+                    <ClickableCell value={project.noOfTaxInvoice} color="purple" onClick={() => onNavigate("taxInvoice", project.projectId)} />
+                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-purple-50/40 text-purple-800 font-medium">
+                      {formatCurrency(project.taxInvoiceAmount)}
+                    </td>
+
+                    {/* ── Clickable: Invoice Booked (Orange) ── */}
+                    <ClickableCell value={project.noOfInvoiceBooked} color="orange" onClick={() => onNavigate("invoiceBooked", project.projectId)} />
+                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-orange-50/40 text-orange-800 font-medium">
                       {formatCurrency(project.invoiceAmount)}
                     </td>
 
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
                       {formatCurrency(project.amountPaid)}
-                    </td>
-
-                    {/* ── Clickable: Tax Invoice ── */}
-                    <ClickableCell value={project.noOfTaxInvoice} color="blue" onClick={() => onNavigate("taxInvoice", project.projectId)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-blue-50/60 text-blue-800 font-medium">
-                      {formatCurrency(project.taxInvoiceAmount)}
                     </td>
 
                     <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-slate-900">

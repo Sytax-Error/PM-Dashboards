@@ -133,7 +133,7 @@ export default function InvoiceReceivedPage({ onBack, projectId }: Props) {
             <div className="overflow-x-auto scroll-table">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-green-700 text-white">
+                  <tr className="bg-blue-700 text-white">
                     <th className="px-4 py-3.5 text-left font-bold w-14">Sr.No</th>
                     <th className="px-4 py-3.5 text-left font-bold">Header ID</th>
                     <th className="px-4 py-3.5 text-left font-bold">Project No</th>
@@ -151,7 +151,7 @@ export default function InvoiceReceivedPage({ onBack, projectId }: Props) {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.map((d) => (
-                    <tr key={d.srNo} className={`hover:bg-green-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                    <tr key={d.srNo} className={`hover:bg-blue-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
                       <td className="px-4 py-3.5 text-slate-600">{d.srNo}</td>
                       <td className="px-4 py-3.5 text-slate-500 font-mono text-xs">{d.headerId}</td>
                       <td className="px-4 py-3.5 text-primary-700 font-semibold">{d.projectNumber}</td>

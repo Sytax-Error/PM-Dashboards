@@ -135,7 +135,7 @@ export default function InvoiceBookedPage({ onBack, projectId }: Props) {
             <div className="overflow-x-auto scroll-table">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-amber-700 text-white">
+                  <tr className="bg-orange-600 text-white">
                     <th className="px-4 py-3.5 text-left font-bold w-14">Sr.No.</th>
                     <th className="px-4 py-3.5 text-left font-bold">Header ID</th>
                     <th className="px-4 py-3.5 text-left font-bold">Project No</th>
@@ -152,7 +152,7 @@ export default function InvoiceBookedPage({ onBack, projectId }: Props) {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.map((d) => (
-                    <tr key={d.srNo} className={`hover:bg-amber-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
+                    <tr key={d.srNo} className={`hover:bg-orange-50/40 transition-colors ${d.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}>
                       <td className="px-4 py-3.5 text-slate-600">{d.srNo}</td>
                       <td className="px-4 py-3.5 text-slate-500 font-mono text-xs">{d.headerId}</td>
                       <td className="px-4 py-3.5 text-primary-700 font-semibold">{d.projectNumber}</td>
@@ -161,7 +161,7 @@ export default function InvoiceBookedPage({ onBack, projectId }: Props) {
                       <td className="px-4 py-3.5 text-slate-700 font-medium">{d.invoiceRefNumber}</td>
                       <td className="px-4 py-3.5 text-slate-600">{d.invoiceDate}</td>
                       <td className="px-4 py-3.5 text-slate-600 text-xs">{d.invoiceType}</td>
-                      <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-amber-700">{formatCurrency(d.amount)}</td>
+                      <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-orange-700">{formatCurrency(d.amount)}</td>
                       <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-medium text-green-700">{d.amountPaid > 0 ? formatCurrency(d.amountPaid) : "-"}</td>
                       <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-red-600">{d.unpaid > 0 ? formatCurrency(d.unpaid) : "-"}</td>
                       <td className="px-4 py-3.5 text-slate-500 text-[10px] border-l border-slate-200/60 leading-tight">{d.createdDate}</td>
