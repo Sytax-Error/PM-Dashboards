@@ -15,21 +15,24 @@ function AppContent() {
   const [activePage, setActivePage] = useState("home");
   const [filterProjectType, setFilterProjectType] = useState<string>("");
   const [filterCount, setFilterCount] = useState<number>(0);
+  const [filterMgrId, setFilterMgrId] = useState<number>(0);
 
   if (!isAuthenticated) {
     return <LoginPage />;
   }
 
   // Navigate to projects page with an optional project type filter and expected count
-  const goToProjects = (projectType?: string, count?: number) => {
+  const goToProjects = (projectType?: string, count?: number, mgrId?: number) => {
     setFilterProjectType(projectType ?? "");
     setFilterCount(count ?? 0);
+    setFilterMgrId(mgrId ?? 0);
     setActivePage("projects");
   };
 
   const clearFilter = () => {
     setFilterProjectType("");
     setFilterCount(0);
+    setFilterMgrId(0);
   };
 
   const renderPage = () => {
@@ -44,6 +47,7 @@ function AppContent() {
             onNavigate={setActivePage}
             filterProjectType={filterProjectType}
             filterCount={filterCount}
+            filterMgrId={filterMgrId}
             onClearFilter={clearFilter}
           />
         );

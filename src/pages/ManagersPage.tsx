@@ -50,6 +50,7 @@ interface ManagerData {
   projects: {
     type: string;
     count: number;
+    code: string;
     highlight?: boolean;
   }[];
 }
@@ -100,7 +101,7 @@ function ManagerCard({
 }
 
 // ─── Shared detail table + chart ─────────────────────────────────────────────
-function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNavigateToProjects: (projectType: string, count: number) => void }) {
+function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: ManagerData; managerId: number; onNavigateToProjects: (typeCode: string, count: number, mgrId: number) => void }) {
   const total = data.projects.reduce((s, p) => s + p.count, 0);
   const topProjectsData = useMemo(
     () => [...data.projects].sort((a, b) => b.count - a.count).slice(0, 8),
@@ -147,8 +148,8 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
                 const widthPct = Math.max(4, Math.round((project.count / maxCount) * 100));
                 return (
                   <tr
-                    key={project.type}
-                    onClick={() => onNavigateToProjects(project.type, project.count)}
+                    key={project.code}
+                    onClick={() => onNavigateToProjects(project.code, project.count, managerId)}
                     title={`Click to view ${project.count} ${project.type} projects`}
                     className={`cursor-pointer transition-colors group ${isHighlighted ? "bg-yellow-50 hover:bg-yellow-100/80" : "hover:bg-primary-50/60"}`}
                   >
@@ -220,13 +221,13 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 interface ManagersPageProps {
-  onNavigate: (projectType?: string, count?: number) => void;
+  onNavigate: (typeCode?: string, count?: number, mgrId?: number) => void;
 }
 
 export default function ManagersPage({ onNavigate }: ManagersPageProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  
+
   // State for the paginated list
   const [managersOnPage, setManagersOnPage] = useState<ManagerListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,7 +253,7 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
       try {
         const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/getAll?page=${currentPage - 1}&size=${PAGE_SIZE}`);
         if (!response.ok) throw new Error('Network response was not ok');
-        
+
         const apiResult: ApiResponse = await response.json();
         if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch project data from API.');
 
@@ -292,13 +293,14 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
       try {
         const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/manager/${selectedManager.id}`);
         if (!response.ok) throw new Error(`Network error fetching details for manager ${selectedManager.id}`);
-        
+
         const apiResult: ApiResponse = await response.json();
         if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('API did not return success for manager details.');
 
         const projects = apiResult.data.map(p => ({
           type: p.prjTypDescription,
-          count: p.noOfProject
+          count: p.noOfProject,
+          code: p.prjTypCode
         }));
 
         const managerDetailData: ManagerData = {
@@ -324,14 +326,14 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
   }
 
   if (error && !activeManagerData) {
-     return <div className="p-10 text-center text-red-600">Error: {error}</div>;
+    return <div className="p-10 text-center text-red-600">Error: {error}</div>;
   }
 
   // Non-admin view is not adapted for this data model
   if (!isAdmin) {
-     return <div className="p-10">This page is available for admins only.</div>;
+    return <div className="p-10">This page is available for admins only.</div>;
   }
-  
+
   return (
     <div className="min-h-full flex flex-col gap-6">
       <div className="pm-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -364,7 +366,7 @@ export default function ManagersPage({ onNavigate }: ManagersPageProps) {
         <>
           {detailLoading && <div className="p-10 text-center">Loading manager details...</div>}
           {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
-          {activeManagerData && <ManagerDetail data={activeManagerData} onNavigateToProjects={onNavigate} />}
+          {activeManagerData && <ManagerDetail data={activeManagerData} managerId={selectedManager.id} onNavigateToProjects={onNavigate} />}
         </>
       )}
 
