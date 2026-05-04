@@ -53,55 +53,55 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
   const [search, setSearch] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const pageSize = 10;
 
   useEffect(() => {
-    if (filterMgrId && filterProjectType) {
-      const fetchFilteredProjects = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/filter?mgrId=${filterMgrId}&type=${filterProjectType}`);
-          if (!response.ok) throw new Error('Network response was not ok');
+    const fetchProjects = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const pageIdx = currentPage - 1;
+        const url = (filterMgrId && filterProjectType)
+          ? `http://10.23.124.23:8080/api/pm/projects/filter?mgrId=${filterMgrId}&type=${filterProjectType}&page=${pageIdx}&size=${pageSize}`
+          : `http://10.23.124.23:8080/api/pm/projects/all?page=${pageIdx}&size=${pageSize}`;
 
-          const apiResult = await response.json();
-          if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch filtered projects.');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
 
-          // Map API data to ProjectDetail format if necessary
-          // For now assuming the API returns fields that match our usage
-          const mappedProjects = apiResult.data.map((p: any, index: number) => ({
-            srNo: index + 1,
-            projectNumber: p.projectCd || p.projectNumber || p.prjNo || "N/A",
-            customerName: p.customerName || p.prjNm || "N/A",
-            projectType: p.prjType || p.prjTypCode || filterProjectType,
-            budgetAmount: p.prjBudgetNo || p.projectAbp || 0,
-            receivedAmount: p.amountReceived || 0,
-            noOfPOs: p.noOfPo || 0,
-            poAmount: p.poAmount || 0,
-            noOfInvoiceReceived: p.noOfInvBilldesk || 0,
-            noOfInvoiceBooked: p.noOfExpInvoice || 0,
-            invoiceAmount: p.totalInvoiceAmount || 0,
-            amountPaid: p.totalAmountPaid || 0,
-            noOfTaxInvoice: p.noOfTaxInvoice || 0,
-            taxInvoiceAmount: p.totalTaxInvoiceAmount || 0,
-            ledgerBalance: (p.totalInvoiceAmount || 0) - (p.totalAmountPaid || 0),
-            projectId: p.projectId || p.headerId,
-          }));
+        const apiResult = await response.json();
+        if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch projects.');
 
-          setProjects(mappedProjects);
-        } catch (e: any) {
-          setError(e.message || "Failed to fetch filtered projects.");
-        } finally {
-          setLoading(false);
-        }
-      };
+        const mappedProjects = apiResult.data.map((p: any, index: number) => ({
+          srNo: (apiResult.data.length > pageSize ? 0 : pageIdx * pageSize) + index + 1,
+          projectNumber: p.projectCd || p.projectNumber || p.prjNo || "N/A",
+          customerName: p.customerName || p.prjNm || "N/A",
+          projectType: p.prjType || p.prjTypCode || (filterProjectType || "Unknown"),
+          budgetAmount: p.prjBudgetNo || p.projectAbp || 0,
+          receivedAmount: p.amountReceived || 0,
+          noOfPOs: p.noOfPo || 0,
+          poAmount: p.poAmount || 0,
+          noOfInvoiceReceived: p.noOfInvBilldesk || 0,
+          noOfInvoiceBooked: p.noOfExpInvoice || 0,
+          invoiceAmount: p.totalInvoiceAmount || 0,
+          amountPaid: p.totalAmountPaid || 0,
+          noOfTaxInvoice: p.noOfTaxInvoice || 0,
+          taxInvoiceAmount: p.totalTaxInvoiceAmount || 0,
+          ledgerBalance: (p.totalInvoiceAmount || 0) - (p.totalAmountPaid || 0),
+          projectId: p.projectId || p.headerId,
+        }));
 
-      fetchFilteredProjects();
-    } else {
-      // If no filter, use static/mock data
-      setProjects(projectDetails);
-    }
-  }, [filterMgrId, filterProjectType]);
+        setProjects(mappedProjects);
+        setTotalRecords(apiResult.totalRecords || filterCount || apiResult.data.length);
+      } catch (e: any) {
+        setError(e.message || "Failed to fetch projects.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [filterMgrId, filterProjectType, currentPage]);
 
   const filterFields: FilterField[] = [
     { key: "srNo", label: "Sr.No." },
@@ -120,7 +120,6 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
 
   const filteredProjects = useMemo(() => {
     let data = projects;
-
     // Further filter by free-text search
     if (search) {
       const s = search.toLowerCase();
@@ -134,11 +133,11 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
     return applyColumnFilters(data, columnFilters);
   }, [search, projects, columnFilters]);
 
-  const totalPages = Math.ceil(filteredProjects.length / pageSize);
-  const paginatedProjects = filteredProjects.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const totalPages = Math.ceil(totalRecords / pageSize);
+  // Fallback: If API returns more than pageSize (e.g. filter endpoint), slice it locally
+  const paginatedProjects = filteredProjects.length > pageSize
+    ? filteredProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : filteredProjects;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -318,7 +317,7 @@ export default function ProjectsPage({ onNavigate, filterProjectType, filterCoun
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={filteredProjects.length}
+            totalItems={totalRecords}
             pageSize={pageSize}
           />
         </div>
