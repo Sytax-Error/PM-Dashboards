@@ -17,13 +17,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem("auth_token") === "true";
+  });
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const savedUser = localStorage.getItem("auth_user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   const login = async (name: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch("http://10.23.124.23:8080/api/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,14 +48,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = data.data[0];
         const role = userData.prjMgrNm === "admin" ? "admin" : "user";
         
-        setIsAuthenticated(true);
-        setUser({
+        const newUser: AuthUser = {
           name: userData.prjMgrNm,
-          email: name, // storing the input name as email for compatibility
+          email: name,
           role: role,
           managerName: role === "user" ? userData.prjMgrNm : null,
           managerId: userData.prjMgrId,
-        });
+        };
+
+        setIsAuthenticated(true);
+        setUser(newUser);
+        localStorage.setItem("auth_token", "true");
+        localStorage.setItem("auth_user", JSON.stringify(newUser));
         return true;
       }
       return false;
@@ -61,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
   };
 
   return (

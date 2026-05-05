@@ -11,6 +11,8 @@ function formatCurrency(num: number): string {
   }).format(num);
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+
 interface ClickableCellProps {
   value: number;
   onClick: () => void;
@@ -101,7 +103,7 @@ export default function ProjectsPage() {
           if (value) params.append(key, value);
         });
 
-        const baseUrl = "http://10.23.124.23:8080/api/pm/projects/all";
+        const baseUrl = `${API_BASE_URL}/pm/projects/all`;
         const url = `${baseUrl}?${params.toString()}`;
 
         const response = await fetch(url);

@@ -27,7 +27,8 @@ export default function InvoiceBookedPage() {
         setLoading(true);
         setError(null);
         try {
-          const response = await fetch(`http://10.23.124.23:8080/api/pm/invoice/project/${projectId}`);
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+          const response = await fetch(`${API_BASE_URL}/pm/invoice/project/${projectId}`);
           if (!response.ok) throw new Error('Network response was not ok');
           const apiResult = await response.json();
           if (!apiResult.data) throw new Error('Failed to fetch booked invoices.');

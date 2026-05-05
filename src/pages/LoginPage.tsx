@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -30,9 +32,16 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await login(username.trim(), password);
-    if (!success) {
-      setError("Invalid credentials. Please try again.");
+    setLoading(true);
+    try {
+      const success = await login(username.trim(), password);
+      if (!success) {
+        setError("Invalid credentials. Please try again.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,9 +207,10 @@ export default function LoginPage() {
                       id="username"
                       type="text"
                       autoComplete="username"
+                      disabled={loading}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100"
+                      className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="admin"
                     />
                   </div>
@@ -218,9 +228,10 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
+                      disabled={loading}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-950 outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100"
+                      className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-950 outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder="Enter password"
                     />
                     <button
@@ -255,12 +266,20 @@ export default function LoginPage() {
 
                 <motion.button
                   variants={fadeUp}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: loading ? 1 : 1.01 }}
+                  whileTap={{ scale: loading ? 1 : 0.98 }}
                   type="submit"
-                  className="h-12 w-full rounded-2xl bg-primary-600 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-200"
+                  disabled={loading}
+                  className="relative h-12 w-full rounded-2xl bg-primary-600 text-sm font-bold text-white shadow-lg shadow-primary-600/25 transition hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-200 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
                 >
-                  Sign in to PM Dashboard
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      <span>Signing in...</span>
+                    </div>
+                  ) : (
+                    "Sign in to PM Dashboard"
+                  )}
                 </motion.button>
               </form>
 

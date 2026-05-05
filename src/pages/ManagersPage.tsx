@@ -14,6 +14,8 @@ import {
 
 const COLORS = ["#6366f1", "#06b6d4", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#14b8a6", "#f97316"];
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+
 // API response types
 interface ProjectData {
   headerId: number;
@@ -280,7 +282,7 @@ export default function ManagersPage() {
 
       try {
         // The group-by-manager API returns all managers, so we fetch it once or assume it might have pagination
-        const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/group-by-manager`);
+        const response = await fetch(`${API_BASE_URL}/pm/projects/group-by-manager`);
         if (!response.ok) throw new Error('Network response was not ok');
 
         const apiResult = await response.json();
@@ -330,7 +332,7 @@ export default function ManagersPage() {
       setDetailLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/manager/${selectedManager.id}`);
+        const response = await fetch(`${API_BASE_URL}/pm/projects/manager/${selectedManager.id}`);
         if (!response.ok) throw new Error(`Network error fetching details for manager ${selectedManager.id}`);
 
         const apiResult: ApiResponse = await response.json();
