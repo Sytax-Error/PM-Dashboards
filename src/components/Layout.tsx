@@ -55,6 +55,7 @@ export default function Layout({ children }: LayoutProps) {
   const path = location.pathname;
   const activePage = path === "/" ? "home" : path.split("/")[1];
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -93,7 +94,12 @@ export default function Layout({ children }: LayoutProps) {
     setMobileOpen(false);
   };
 
-  const pageInfo = pageTitles[activePage] || pageTitles.home;
+  let pageInfo = { ...(pageTitles[activePage] || pageTitles.home) };
+  if (!isAdmin && activePage === "managers") {
+    pageInfo.title = "Projects Summary";
+    pageInfo.subtitle = "Overview of your assigned projects";
+  }
+
   const paginationManagedPages = new Set(["projects", "invoices", "agencies", "reports", "managers"]);
   const showFloatingScrollTop = showScrollTop && !paginationManagedPages.has(activePage);
 
@@ -149,13 +155,20 @@ export default function Layout({ children }: LayoutProps) {
         {/* Navigation — scrollable */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1 scroll-dark">
           {navItems.map((item) => {
+            if (!isAdmin && item.id === "home") return null;
+            
+            let label = item.label;
+            if (!isAdmin && item.id === "managers") {
+              label = "Projects";
+            }
+
             const isActive = activePage === item.id;
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => handleNavigate(item.id)}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? label : undefined}
                 className={`
                   w-full flex items-center gap-3 rounded-xl text-sm font-medium
                   transition-all duration-200 cursor-pointer
@@ -168,7 +181,7 @@ export default function Layout({ children }: LayoutProps) {
                 `}
               >
                 {item.icon}
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span>{label}</span>}
                 {isActive && !collapsed && (
                   <div className="ml-auto w-2 h-2 rounded-full bg-accent-500" />
                 )}
