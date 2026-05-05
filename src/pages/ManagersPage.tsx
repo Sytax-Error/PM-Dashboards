@@ -283,24 +283,35 @@ export default function ManagersPage() {
       }
 
       try {
-        const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/getAll?page=${currentPage - 1}&size=${PAGE_SIZE}`);
+        // The group-by-manager API returns all managers, so we fetch it once or assume it might have pagination
+        const response = await fetch(`http://10.23.124.23:8080/api/pm/projects/group-by-manager`);
         if (!response.ok) throw new Error('Network response was not ok');
 
-        const apiResult: ApiResponse = await response.json();
+        const apiResult = await response.json();
         if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch project data from API.');
 
-        const managerListFromApi: ManagerListItem[] = apiResult.data.map((project) => ({
-          managerId: project.prjMgrId,
-          managerName: project.prjMgrNm,
-          reactKey: project.headerId.toString(), // Use a truly unique ID from the record
+        // Extract total records, use it for pagination
+        const total = apiResult.totalRecords || apiResult.data.length;
+        
+        // Handle local pagination if the API returned all data
+        const startIndex = (currentPage - 1) * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        const paginatedData = apiResult.data.length > PAGE_SIZE 
+          ? apiResult.data.slice(startIndex, endIndex)
+          : apiResult.data;
+
+        const managerListFromApi: ManagerListItem[] = paginatedData.map((manager: any, idx: number) => ({
+          managerId: manager.prjMgrId,
+          managerName: manager.prjMgrNm,
+          reactKey: `mgr-${manager.prjMgrId}-${idx}`, 
           projects: [{
-            type: project.prjTypDescription,
-            count: project.noOfProject,
+            type: "Total Projects",
+            count: manager.projectCount,
           }],
         }));
 
         setManagersOnPage(managerListFromApi);
-        setTotalRecords(apiResult.totalRecords);
+        setTotalRecords(total);
 
       } catch (e: any) {
         setError(e.message || "Failed to fetch project data.");
