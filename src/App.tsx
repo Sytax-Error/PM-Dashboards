@@ -11,7 +11,7 @@ import TaxInvoicePage from "./pages/TaxInvoicePage";
 import Layout from "./components/Layout";
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
     return <LoginPage />;
@@ -20,7 +20,14 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route 
+          path="/" 
+          element={
+            user?.role === "user" 
+              ? <Navigate to={`/managers?mgrId=${user.managerId}&mgrName=${encodeURIComponent(user.name)}`} replace /> 
+              : <HomePage />
+          } 
+        />
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/managers" element={<ManagersPage />} />
         <Route path="/projects" element={<ProjectsPage />} />

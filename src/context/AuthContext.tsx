@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: "admin" | "user";
   managerName: string | null;
+  managerId: number | null;
 }
 
 interface AuthContextType {
@@ -46,7 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: userData.prjMgrNm,
           email: name, // storing the input name as email for compatibility
           role: role,
-          managerName: null,
+          managerName: role === "user" ? userData.prjMgrNm : null,
+          managerId: userData.prjMgrId,
         });
         return true;
       }

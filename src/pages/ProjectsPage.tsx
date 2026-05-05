@@ -40,13 +40,20 @@ function ClickableCell({ value, onClick, color = "indigo" }: ClickableCellProps)
 
 import { useSearchParams, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../context/AuthContext";
+
 export default function ProjectsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const filterProjectType = searchParams.get("type") || "";
   const filterCount = Number(searchParams.get("count")) || 0;
-  const filterMgrId = Number(searchParams.get("mgrId")) || 0;
+  // If not admin, strictly enforce their own managerId
+  const filterMgrId = (!isAdmin && user?.managerId) 
+    ? user.managerId 
+    : (Number(searchParams.get("mgrId")) || 0);
   const currentPage = Number(searchParams.get("page")) || 1;
   const filterPrjName = searchParams.get("prjName") || "";
   const filterCustomerName = searchParams.get("customerName") || "";
@@ -92,7 +99,8 @@ export default function ProjectsPage() {
         const pageIdx = currentPage - 1;
         const isManagerView = filterMgrId && filterProjectType;
         const hasColumnFilters = Object.values(columnFilters).some(v => v);
-        const isFiltering = isManagerView || hasColumnFilters;
+        // Force filtering if a specific manager is required (e.g. for user roles) or if there's any active filter
+        const isFiltering = !!filterMgrId || !!filterProjectType || hasColumnFilters;
 
         const params = new URLSearchParams();
         params.append("page", pageIdx.toString());

@@ -230,11 +230,17 @@ export default function ManagersPage() {
   const selectedManagerId = searchParams.get("mgrId");
   const selectedManagerName = searchParams.get("mgrName");
   
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  
   const selectedManager = useMemo(() => {
+    if (!isAdmin && user) {
+      return { id: user.managerId as number, name: user.name };
+    }
     return selectedManagerId 
       ? { id: Number(selectedManagerId), name: selectedManagerName || "" } 
       : null;
-  }, [selectedManagerId, selectedManagerName]);
+  }, [selectedManagerId, selectedManagerName, isAdmin, user]);
 
   const setSelectedManager = (mgr: { id: number; name: string } | null) => {
     if (mgr) {
@@ -252,8 +258,7 @@ export default function ManagersPage() {
     setSearchParams(searchParams, { replace: true });
   };
 
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+
 
   // State for the paginated list
   const [managersOnPage, setManagersOnPage] = useState<ManagerListItem[]>([]);
@@ -348,10 +353,7 @@ export default function ManagersPage() {
   }, [selectedManager?.id, selectedManager?.name]);
 
 
-  // Non-admin view is not adapted for this data model
-  if (!isAdmin) {
-    return <div className="p-10 text-slate-500 font-medium">This page is available for admins only.</div>;
-  }
+
 
   const handleNavigateToProjects = (typeCode: string, count: number) => {
     navigate(`/projects?mgrId=${selectedManager?.id}&type=${typeCode}&count=${count}`);
@@ -369,7 +371,7 @@ export default function ManagersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {selectedManager && (
+          {isAdmin && selectedManager && (
             <button
               type="button"
               onClick={() => setSelectedManager(null)} // This takes you back to the list
