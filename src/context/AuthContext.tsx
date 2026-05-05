@@ -11,7 +11,7 @@ export interface AuthUser {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: AuthUser | null;
-  login: (email: string, password: string) => boolean;
+  login: (name: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -21,36 +21,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  const login = (email: string, password: string): boolean => {
-    // Check against registered accounts first
-    const account = userAccounts.find(
-      (a) => a.email.toLowerCase() === email.toLowerCase() && a.password === password
-    );
-
-    if (account) {
-      setIsAuthenticated(true);
-      setUser({
-        name: account.name,
-        email: account.email,
-        role: account.role,
-        managerName: account.managerName,
+  const login = async (name: string, password: string): Promise<boolean> => {
+    try {
+      const response = await fetch("http://10.23.124.23:8080/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, password }),
       });
-      return true;
-    }
 
-    // Demo fallback: any email + 4+ char password → admin
-    if (email && password.length >= 4) {
-      setIsAuthenticated(true);
-      setUser({
-        name: email.split("@")[0].replace(/\./g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        email,
-        role: "admin",
-        managerName: null,
-      });
-      return true;
-    }
+      if (!response.ok) {
+        return false;
+      }
 
-    return false;
+      const data = await response.json();
+
+      if (data.status === "SUCCESS" && data.data && data.data.length > 0) {
+        const userData = data.data[0];
+        const role = userData.prjMgrNm === "admin" ? "admin" : "user";
+        
+        setIsAuthenticated(true);
+        setUser({
+          name: userData.prjMgrNm,
+          email: name, // storing the input name as email for compatibility
+          role: role,
+          managerName: null,
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Login API error:", error);
+      return false;
+    }
   };
 
   const logout = () => {

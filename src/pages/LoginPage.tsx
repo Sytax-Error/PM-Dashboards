@@ -10,33 +10,34 @@ const fadeUp = {
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!email.trim()) {
-      setError("Please enter your email address.");
+    if (!username.trim()) {
+      setError("Please enter your username.");
       return;
     }
 
-    if (!password || password.length < 4) {
+    if (!password || password.length < 3) {
       setError("Password must be at least 4 characters.");
       return;
     }
 
-    if (!login(email.trim(), password)) {
+    const success = await login(username.trim(), password);
+    if (!success) {
       setError("Invalid credentials. Please try again.");
     }
   };
 
   const fillAccount = (acc: typeof userAccounts[number]) => {
-    setEmail(acc.email);
+    setUsername(acc.name);
     setPassword(acc.password);
     setShowAccounts(false);
     setError("");
@@ -186,21 +187,21 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <motion.div variants={fadeUp}>
-                  <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">
-                    Email address
+                  <label htmlFor="username" className="mb-2 block text-sm font-semibold text-slate-700">
+                    Username
                   </label>
                   <div className="relative">
                     <svg className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206A8.963 8.963 0 0112 21" />
                     </svg>
                     <input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      id="username"
+                      type="text"
+                      autoComplete="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                       className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-950 outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100"
-                      placeholder="admin@pm.gov.in"
+                      placeholder="admin"
                     />
                   </div>
                 </motion.div>
