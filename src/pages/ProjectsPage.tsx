@@ -188,7 +188,7 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="pm-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          {filterProjectType && (
+          {(filterProjectType || filterMgrId) && (
             <button
               type="button"
               onClick={onClearFilter}

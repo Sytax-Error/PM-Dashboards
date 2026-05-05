@@ -23,9 +23,9 @@ function AppContent() {
         <Route 
           path="/" 
           element={
-            user?.role === "user" 
-              ? <Navigate to={`/managers?mgrId=${user.managerId}&mgrName=${encodeURIComponent(user.name)}`} replace /> 
-              : <HomePage />
+            user?.role === "admin" 
+              ? <HomePage />
+              : <Navigate to={`/projects?mgrId=${user.managerId}&mgrName=${encodeURIComponent(user.name)}`} replace /> 
           } 
         />
         <Route path="/home" element={<Navigate to="/" replace />} />

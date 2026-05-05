@@ -94,6 +94,11 @@ export default function Layout({ children }: LayoutProps) {
     setMobileOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
+
   let pageInfo = { ...(pageTitles[activePage] || pageTitles.home) };
   if (!isAdmin && activePage === "managers") {
     pageInfo.title = "Projects Summary";
@@ -224,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                   title="Logout"
                 >
@@ -238,7 +243,7 @@ export default function Layout({ children }: LayoutProps) {
           {collapsed && (
             <button
               type="button"
-              onClick={logout}
+              onClick={handleLogout}
               className="w-full mt-2 flex items-center justify-center p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
               title="Logout"
             >
