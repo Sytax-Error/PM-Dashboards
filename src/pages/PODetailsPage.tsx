@@ -112,10 +112,25 @@ export default function PODetailsPage() {
       </div>
 
       {/* Loading/Error States */}
-      {loading && <div className="p-10 text-center">Loading PO details...</div>}
-      {error && <div className="p-10 text-center text-red-600">Error: {error}</div>}
+      {error && (
+        <div className="p-20 flex flex-col items-center justify-center text-center pm-card rounded-2xl">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4 text-red-500">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">Failed to load PO details</h3>
+          <p className="text-sm text-slate-500 mt-1">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-5 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
 
-      {!loading && !error && (
+      {!error && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="pm-card rounded-2xl p-5"><p className="text-sm text-slate-500">Total POs/WOs</p><p className="text-2xl font-bold text-slate-900 mt-1">{filteredData.length}</p></div>
@@ -124,7 +139,26 @@ export default function PODetailsPage() {
 
           <ColumnFilterPanel fields={filterFields} filters={columnFilters} onChange={setColumnFilters} />
 
-          <div className="pm-card rounded-2xl overflow-hidden">
+          <div className={`pm-card rounded-2xl overflow-hidden relative ${loading ? "opacity-60" : ""}`}>
+            {loading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px]">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-8 h-8 border-4 border-primary-500/30 border-t-primary-600 rounded-full animate-spin"></div>
+                  <span className="text-xs font-bold text-primary-700">Refreshing...</span>
+                </div>
+              </div>
+            )}
+            {paginatedData.length === 0 && !loading ? (
+              <div className="p-20 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">No PO details found</h3>
+                <p className="text-sm text-slate-500 mt-1">There are no purchase order records matching the current filters.</p>
+              </div>
+            ) : (
             <div className="overflow-x-auto scroll-table">
               <table className="w-full text-sm">
                 <thead>
@@ -175,7 +209,10 @@ export default function PODetailsPage() {
                 </tfoot>
               </table>
             </div>
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredData.length} pageSize={pageSize} />
+            )}
+            {filteredData.length > pageSize && (
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} totalItems={filteredData.length} pageSize={pageSize} />
+            )}
           </div>
         </>
       )}

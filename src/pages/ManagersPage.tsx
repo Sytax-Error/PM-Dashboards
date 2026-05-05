@@ -225,20 +225,20 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 export default function ManagersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   const currentPage = Number(searchParams.get("page")) || 1;
   const selectedManagerId = searchParams.get("mgrId");
   const selectedManagerName = searchParams.get("mgrName");
-  
+
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  
+
   const selectedManager = useMemo(() => {
     if (!isAdmin && user) {
       return { id: user.managerId as number, name: user.name };
     }
-    return selectedManagerId 
-      ? { id: Number(selectedManagerId), name: selectedManagerName || "" } 
+    return selectedManagerId
+      ? { id: Number(selectedManagerId), name: selectedManagerName || "" }
       : null;
   }, [selectedManagerId, selectedManagerName, isAdmin, user]);
 
@@ -292,18 +292,18 @@ export default function ManagersPage() {
 
         // Extract total records, use it for pagination
         const total = apiResult.totalRecords || apiResult.data.length;
-        
+
         // Handle local pagination if the API returned all data
         const startIndex = (currentPage - 1) * PAGE_SIZE;
         const endIndex = startIndex + PAGE_SIZE;
-        const paginatedData = apiResult.data.length > PAGE_SIZE 
+        const paginatedData = apiResult.data.length > PAGE_SIZE
           ? apiResult.data.slice(startIndex, endIndex)
           : apiResult.data;
 
         const managerListFromApi: ManagerListItem[] = paginatedData.map((manager: any, idx: number) => ({
           managerId: manager.prjMgrId,
           managerName: manager.prjMgrNm,
-          reactKey: `mgr-${manager.prjMgrId}-${idx}`, 
+          reactKey: `mgr-${manager.prjMgrId}-${idx}`,
           projects: [{
             type: "Total Projects",
             count: manager.projectCount,
@@ -402,10 +402,10 @@ export default function ManagersPage() {
           {detailLoading && <div className="p-10 text-center text-slate-500 font-medium">Loading manager details...</div>}
           {error && !detailLoading && <div className="p-10 text-center text-red-600 font-medium">Error: {error}</div>}
           {activeManagerData && !detailLoading && (
-            <ManagerDetail 
-              data={activeManagerData} 
-              managerId={selectedManager.id} 
-              onNavigateToProjects={handleNavigateToProjects} 
+            <ManagerDetail
+              data={activeManagerData}
+              managerId={selectedManager.id}
+              onNavigateToProjects={handleNavigateToProjects}
             />
           )}
         </>
