@@ -50,12 +50,14 @@ import { useLocation, useNavigate } from "react-router-dom";
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === "admin";
   
   // Determine activePage from URL path
   const path = location.pathname;
-  const activePage = path === "/" ? "home" : path.split("/")[1];
-  const { user, logout } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const activePage = path === "/" 
+    ? (isAdmin ? "home" : "managers") 
+    : path === "/dashboard" ? "home" : path.split("/")[1];
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -89,7 +91,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const handleNavigate = (pageId: string) => {
-    const target = pageId === "home" ? "/" : `/${pageId}`;
+    const target = pageId === "home" ? "/dashboard" : `/${pageId}`;
     navigate(target);
     setMobileOpen(false);
   };
@@ -294,15 +296,6 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="relative p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full" />
-              </button>
               <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-gray-200">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-semibold text-xs">
                   {user?.name?.charAt(0) || "A"}

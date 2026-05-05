@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { userAccounts } from "../data/mockData";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 18 },
@@ -14,7 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showAccounts, setShowAccounts] = useState(false);
+
 
   const [loading, setLoading] = useState(false);
 
@@ -45,12 +44,7 @@ export default function LoginPage() {
     }
   };
 
-  const fillAccount = (acc: typeof userAccounts[number]) => {
-    setUsername(acc.name);
-    setPassword(acc.password);
-    setShowAccounts(false);
-    setError("");
-  };
+
 
   return (
     <main className="relative min-h-dvh overflow-y-auto bg-[#08111f] px-4 py-4 text-slate-900 sm:px-6 lg:px-8">
@@ -283,55 +277,7 @@ export default function LoginPage() {
                 </motion.button>
               </form>
 
-              {/* Demo accounts */}
-              <motion.div variants={fadeUp} className="mt-5">
-                <button
-                  type="button"
-                  onClick={() => setShowAccounts((v) => !v)}
-                  className="w-full flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500 ring-1 ring-slate-200 hover:bg-slate-100 transition-colors"
-                >
-                  <span className="font-medium text-slate-600">Demo accounts — click to view & fill</span>
-                  <svg className={`h-4 w-4 transition-transform ${showAccounts ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
 
-                <AnimatePresence>
-                  {showAccounts && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-2 rounded-2xl ring-1 ring-slate-200 overflow-hidden">
-                        {userAccounts.map((acc, idx) => (
-                          <button
-                            key={acc.email}
-                            type="button"
-                            onClick={() => fillAccount(acc)}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 text-left text-xs transition-colors hover:bg-primary-50 ${idx > 0 ? "border-t border-slate-100" : ""}`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-bold ${acc.role === "admin" ? "bg-primary-600" : "bg-indigo-400"}`}>
-                                {acc.name.charAt(0)}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-semibold text-slate-700 truncate">{acc.name}</p>
-                                <p className="text-slate-400 truncate">{acc.email}</p>
-                              </div>
-                            </div>
-                            <span className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${acc.role === "admin" ? "bg-primary-100 text-primary-700" : "bg-indigo-100 text-indigo-700"}`}>
-                              {acc.role}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
             </motion.div>
           </div>
         </motion.section>

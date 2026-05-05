@@ -23,12 +23,18 @@ function AppContent() {
         <Route 
           path="/" 
           element={
-            user?.role === "admin" 
-              ? <HomePage />
-              : <Navigate to={`/projects?mgrId=${user.managerId}&mgrName=${encodeURIComponent(user.name)}`} replace /> 
+            <Navigate 
+              to={
+                user?.role === "admin" 
+                  ? "/dashboard" 
+                  : `/managers?mgrId=${user?.managerId}&mgrName=${encodeURIComponent(user?.name || "")}`
+              } 
+              replace 
+            />
           } 
         />
-        <Route path="/home" element={<Navigate to="/" replace />} />
+        <Route path="/dashboard" element={<HomePage />} />
+        <Route path="/home" element={<Navigate to="/dashboard" replace />} />
         <Route path="/managers" element={<ManagersPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         {/* Detail Pages with Project ID */}
