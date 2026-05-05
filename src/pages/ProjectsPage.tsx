@@ -98,28 +98,23 @@ export default function ProjectsPage() {
       try {
         const pageIdx = currentPage - 1;
         const isManagerView = filterMgrId && filterProjectType;
-        const hasColumnFilters = Object.values(columnFilters).some(v => v);
-        // Force filtering if a specific manager is required (e.g. for user roles) or if there's any active filter
-        const isFiltering = !!filterMgrId || !!filterProjectType || hasColumnFilters;
-
         const params = new URLSearchParams();
         params.append("page", pageIdx.toString());
         params.append("size", pageSize.toString());
 
-        if (isFiltering) {
-          params.append("mgrId", filterMgrId ? filterMgrId.toString() : "0");
-          params.append("type", filterProjectType || "");
-
-          // Include all column filters in API call
-          Object.entries(columnFilters).forEach(([key, value]) => {
-            if (value) params.append(key, value);
-          });
+        if (filterMgrId) {
+          params.append("mgrId", filterMgrId.toString());
+        }
+        if (filterProjectType) {
+          params.append("type", filterProjectType);
         }
 
-        const baseUrl = isFiltering
-          ? "http://10.23.124.23:8080/api/pm/projects/filter"
-          : "http://10.23.124.23:8080/api/pm/projects/all";
+        // Include all column filters in API call
+        Object.entries(columnFilters).forEach(([key, value]) => {
+          if (value) params.append(key, value);
+        });
 
+        const baseUrl = "http://10.23.124.23:8080/api/pm/projects/all";
         const url = `${baseUrl}?${params.toString()}`;
 
         const response = await fetch(url);
