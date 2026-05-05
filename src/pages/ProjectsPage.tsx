@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { projectDetails, generateProjectsForType } from "../data/mockData";
 import Pagination from "../components/Pagination";
 import ColumnFilterPanel from "../components/ColumnFilterPanel";
 import { applyColumnFilters, type ColumnFilters, type FilterField } from "../utils/tableFilters";
@@ -18,7 +17,7 @@ interface ClickableCellProps {
   color?: "green" | "blue" | "purple" | "orange";
 }
 
-function ClickableCell({ value, onClick, color = "indigo" }: ClickableCellProps) {
+function ClickableCell({ value, onClick, color = "blue" }: ClickableCellProps) {
   const colorClasses = {
     green: "bg-green-100/50 text-green-700 hover:bg-green-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
     blue: "bg-blue-100/50 text-blue-700 hover:bg-blue-100 cursor-pointer font-bold underline decoration-dotted underline-offset-2",
@@ -40,25 +39,14 @@ function ClickableCell({ value, onClick, color = "indigo" }: ClickableCellProps)
 
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
-
 export default function ProjectsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
 
   const filterProjectType = searchParams.get("type") || "";
   const filterCount = Number(searchParams.get("count")) || 0;
-  // If not admin, strictly enforce their own managerId
-  const filterMgrId = (!isAdmin && user?.managerId) 
-    ? user.managerId 
-    : (Number(searchParams.get("mgrId")) || 0);
+  const filterMgrId = searchParams.get("mgrId");
   const currentPage = Number(searchParams.get("page")) || 1;
-  const filterPrjName = searchParams.get("prjName") || "";
-  const filterCustomerName = searchParams.get("customerName") || "";
-  const filterMargin = searchParams.get("margin") || "";
-  const filterProjectAbp = searchParams.get("projectAbp") || "";
 
   const setCurrentPage = (page: number) => {
     searchParams.set("page", page.toString());
@@ -97,7 +85,6 @@ export default function ProjectsPage() {
       setError(null);
       try {
         const pageIdx = currentPage - 1;
-        const isManagerView = filterMgrId && filterProjectType;
         const params = new URLSearchParams();
         params.append("page", pageIdx.toString());
         params.append("size", pageSize.toString());
@@ -155,7 +142,7 @@ export default function ProjectsPage() {
     };
 
     fetchProjects();
-  }, [filterMgrId, filterProjectType, columnFilters, currentPage]);
+  }, [filterMgrId, filterProjectType, columnFilters, currentPage, filterCount]);
 
   const filterFields: FilterField[] = [
     { key: "prjName", label: "Project Name", placeholder: "Search project..." },
@@ -193,11 +180,6 @@ export default function ProjectsPage() {
   const paginatedProjects = filteredProjects.length > pageSize
     ? filteredProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     : filteredProjects;
-
-  // No longer need this separate effect that triggers secondary navigates
-  // useEffect(() => {
-  //   setCurrentPage(1);
-  // }, [search, filterProjectType, columnFilters]);
 
   return (
     <div className="min-h-full flex flex-col gap-6">

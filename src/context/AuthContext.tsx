@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { userAccounts } from "../data/mockData";
 
 export interface AuthUser {
   name: string;

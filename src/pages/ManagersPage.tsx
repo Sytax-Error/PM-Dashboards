@@ -64,8 +64,7 @@ function ManagerCard({
   manager: ManagerListItem;
   onSelect: () => void;
 }) {
-  const total = manager.projects.reduce((s, p) => s + p.count, 0);
-  const topType = [...manager.projects].sort((a, b) => b.count - a.count)[0];
+
 
   return (
     <button
@@ -101,17 +100,14 @@ function ManagerCard({
 }
 
 // ─── Shared detail table + chart ─────────────────────────────────────────────
-function ManagerDetail({ data, managerId, onNavigateToProjects }: { data: ManagerData; managerId: number; onNavigateToProjects: (typeCode: string, count: number) => void }) {
+function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNavigateToProjects: (typeCode: string, count: number) => void }) {
   const total = data.projects.reduce((s, p) => s + p.count, 0);
   const topProjectsData = useMemo(
     () => [...data.projects].sort((a, b) => b.count - a.count).slice(0, 8),
     [data]
   );
-  const topShare = useMemo(
-    () => topProjectsData.slice(0, 3).reduce((s, p) => s + p.count, 0),
-    [topProjectsData]
-  );
-  const topSharePct = total > 0 ? Math.round((topShare / total) * 100) : 0;
+
+
   const maxCount = useMemo(
     () => Math.max(...data.projects.map((p) => p.count), 1),
     [data]
@@ -404,7 +400,6 @@ export default function ManagersPage() {
           {activeManagerData && !detailLoading && (
             <ManagerDetail
               data={activeManagerData}
-              managerId={selectedManager.id}
               onNavigateToProjects={handleNavigateToProjects}
             />
           )}
