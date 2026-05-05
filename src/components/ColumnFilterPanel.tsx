@@ -9,7 +9,7 @@ interface ColumnFilterPanelProps {
 
 export default function ColumnFilterPanel({ fields, filters, onChange }: ColumnFilterPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const activeCount = Object.values(filters).filter((value) => value.trim()).length;
+  const activeCount = Object.values(filters).filter((value) => value && value.trim()).length;
 
   const updateFilter = (key: string, value: string) => {
     onChange({ ...filters, [key]: value });
@@ -67,13 +67,28 @@ export default function ColumnFilterPanel({ fields, filters, onChange }: ColumnF
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 {field.label}
               </span>
-              <input
-                type="text"
-                value={filters[field.key] ?? ""}
-                onChange={(e) => updateFilter(field.key, e.target.value)}
-                placeholder={field.placeholder ?? `Filter ${field.label}`}
-                className="h-9 w-full rounded-xl border border-slate-200 bg-white/80 px-3 text-xs text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-              />
+              {field.options ? (
+                <select
+                  value={filters[field.key] ?? ""}
+                  onChange={(e) => updateFilter(field.key, e.target.value)}
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white/80 px-2 text-xs text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                >
+                  <option value="">{field.placeholder ?? `All ${field.label}`}</option>
+                  {field.options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={filters[field.key] ?? ""}
+                  onChange={(e) => updateFilter(field.key, e.target.value)}
+                  placeholder={field.placeholder ?? `Filter ${field.label}`}
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-white/80 px-3 text-xs text-slate-800 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                />
+              )}
             </label>
           ))}
         </div>

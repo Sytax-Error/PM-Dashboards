@@ -4,6 +4,7 @@ export interface FilterField {
   key: string;
   label: string;
   placeholder?: string;
+  options?: { label: string; value: string }[];
 }
 
 export function applyColumnFilters<T extends object>(

@@ -48,6 +48,10 @@ export default function ProjectsPage() {
   const filterCount = Number(searchParams.get("count")) || 0;
   const filterMgrId = Number(searchParams.get("mgrId")) || 0;
   const currentPage = Number(searchParams.get("page")) || 1;
+  const filterPrjName = searchParams.get("prjName") || "";
+  const filterCustomerName = searchParams.get("customerName") || "";
+  const filterMargin = searchParams.get("margin") || "";
+  const filterProjectAbp = searchParams.get("projectAbp") || "";
 
   const setCurrentPage = (page: number) => {
     searchParams.set("page", page.toString());
@@ -65,7 +69,18 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [columnFilters, setColumnFilters] = useState<ColumnFilters>({});
+
+  // Initialize column filters from search params
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(() => {
+    const filters: ColumnFilters = {};
+    searchParams.forEach((value, key) => {
+      if (!["type", "count", "mgrId", "page", "mgrName"].includes(key)) {
+        filters[key] = value;
+      }
+    });
+    return filters;
+  });
+
   const [totalRecords, setTotalRecords] = useState(0);
   const pageSize = 10;
 
@@ -75,9 +90,29 @@ export default function ProjectsPage() {
       setError(null);
       try {
         const pageIdx = currentPage - 1;
-        const url = (filterMgrId && filterProjectType)
-          ? `http://10.23.124.23:8080/api/pm/projects/filter?mgrId=${filterMgrId}&type=${filterProjectType}&page=${pageIdx}&size=${pageSize}`
-          : `http://10.23.124.23:8080/api/pm/projects/all?page=${pageIdx}&size=${pageSize}`;
+        const isManagerView = filterMgrId && filterProjectType;
+        const hasColumnFilters = Object.values(columnFilters).some(v => v);
+        const isFiltering = isManagerView || hasColumnFilters;
+
+        const params = new URLSearchParams();
+        params.append("page", pageIdx.toString());
+        params.append("size", pageSize.toString());
+
+        if (isFiltering) {
+          params.append("mgrId", filterMgrId ? filterMgrId.toString() : "0");
+          params.append("type", filterProjectType || "");
+
+          // Include all column filters in API call
+          Object.entries(columnFilters).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+          });
+        }
+
+        const baseUrl = isFiltering
+          ? "http://10.23.124.23:8080/api/pm/projects/filter"
+          : "http://10.23.124.23:8080/api/pm/projects/all";
+
+        const url = `${baseUrl}?${params.toString()}`;
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response was not ok');
@@ -87,7 +122,7 @@ export default function ProjectsPage() {
 
         const total = apiResult.totalRecords || filterCount || apiResult.data.length;
         const isFullList = apiResult.data.length >= total && total > 0;
-        
+
         const mappedProjects = apiResult.data.map((p: any, index: number) => ({
           srNo: (isFullList ? 0 : pageIdx * pageSize) + index + 1,
           projectNumber: p.projectCd || p.projectNumber || p.prjNo || "N/A",
@@ -117,21 +152,22 @@ export default function ProjectsPage() {
     };
 
     fetchProjects();
-  }, [filterMgrId, filterProjectType, currentPage]);
+  }, [filterMgrId, filterProjectType, columnFilters, currentPage]);
 
   const filterFields: FilterField[] = [
-    { key: "srNo", label: "Sr.No." },
+    { key: "prjName", label: "Project Name", placeholder: "Search project..." },
+    { key: "customerName", label: "Customer Name", placeholder: "Search customer..." },
+    { key: "margin", label: "Margin", placeholder: "Filter margin..." },
+    {
+      key: "projectAbp",
+      label: "ABP Type",
+      options: [
+        { label: "Positive", value: "positive" },
+        { label: "Negative", value: "negative" }
+      ]
+    },
     { key: "projectNumber", label: "Project Number" },
-    { key: "customerName", label: "Customer Name" },
     { key: "projectType", label: "Project Type" },
-    { key: "budgetAmount", label: "Budget" },
-    { key: "receivedAmount", label: "Received" },
-    { key: "noOfPOs", label: "PO/WO" },
-    { key: "poAmount", label: "PO Amount" },
-    { key: "noOfInvoiceReceived", label: "Invoice Received" },
-    { key: "noOfInvoiceBooked", label: "Invoice Booked" },
-    { key: "noOfTaxInvoice", label: "Tax Invoice" },
-    { key: "ledgerBalance", label: "Ledger Balance" },
   ];
 
   const filteredProjects = useMemo(() => {
@@ -189,7 +225,7 @@ export default function ProjectsPage() {
             </svg>
             <input
               type="text"
-              placeholder="Search by project number or customer..."
+              placeholder="Search in current results..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -202,36 +238,44 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Active filter banner */}
-      {filterProjectType && (
+      {/* Active filter banner - purely informational now as filters are in the panel */}
+      {(filterProjectType || Object.values(columnFilters).some(v => v)) && (
         <div className="flex items-center gap-3 rounded-2xl border border-primary-200 bg-primary-50 px-5 py-3 text-sm">
           <svg className="w-4 h-4 text-primary-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
           <span className="text-primary-700">
-            Showing <span className="font-bold">{filteredProjects.length}</span> project{filteredProjects.length !== 1 ? "s" : ""} for project type:
-            <span className="ml-1 inline-flex items-center rounded-lg bg-primary-600 px-2.5 py-0.5 text-xs font-bold text-white">
-              {filterProjectType}
-            </span>
+            Showing <span className="font-bold">{filteredProjects.length}</span> projects with active column filters.
           </span>
           <button
             type="button"
             onClick={onClearFilter}
             className="ml-auto text-xs font-semibold text-primary-600 hover:text-primary-800 transition-colors"
           >
-            Clear filter
+            Clear All Filters
           </button>
         </div>
       )}
 
-      <ColumnFilterPanel 
-        fields={filterFields} 
-        filters={columnFilters} 
+      <ColumnFilterPanel
+        fields={filterFields}
+        filters={columnFilters}
         onChange={(newFilters) => {
           setColumnFilters(newFilters);
-          searchParams.set("page", "1");
-          setSearchParams(searchParams);
-        }} 
+
+          // Update URL search params for all column filters
+          // First, clear existing column filter params
+          const newParams = new URLSearchParams(searchParams);
+          filterFields.forEach(f => newParams.delete(f.key));
+
+          // Add new ones
+          Object.entries(newFilters).forEach(([key, value]) => {
+            if (value) newParams.set(key, value);
+          });
+
+          newParams.set("page", "1");
+          setSearchParams(newParams, { replace: true });
+        }}
       />
 
       {/* Legend */}
@@ -269,93 +313,93 @@ export default function ProjectsPage() {
           </div>
         )}
         <div className="overflow-x-auto scroll-table">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-800 text-white border-b border-slate-700">
-                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Sr.No.</th>
-                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Project No</th>
-                  <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Customer</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Budget</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Received</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Count</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Amt</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-blue-700 uppercase">Billdesk</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Count</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Amt</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Booked</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Inv Amt</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Paid</th>
-                  <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Balance</th>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-800 text-white border-b border-slate-700">
+                <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Sr.No.</th>
+                <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Project No</th>
+                <th className="px-4 py-3.5 text-left font-bold text-xs uppercase">Customer</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Budget</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Received</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Count</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-green-700 uppercase">PO Amt</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-blue-700 uppercase">Billdesk</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Count</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-purple-700 uppercase">Tax Amt</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Booked</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 bg-orange-600 uppercase">Inv Amt</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Paid</th>
+                <th className="px-4 py-3.5 text-right font-bold text-xs border-l border-white/10 uppercase">Balance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginatedProjects.map((project) => (
+                <tr
+                  key={project.srNo}
+                  className={`transition-colors hover:bg-primary-50/30 ${project.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/40"
+                    }`}
+                >
+                  <td className="px-4 py-3.5 text-slate-600 font-medium">{project.srNo}</td>
+                  <td className="px-4 py-3.5 text-primary-700 font-bold">{project.projectNumber}</td>
+                  <td className="px-4 py-3.5 text-slate-800">{project.customerName}</td>
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
+                    {formatCurrency(project.budgetAmount)}
+                  </td>
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
+                    {formatCurrency(project.receivedAmount)}
+                  </td>
+
+                  {/* ── Clickable: PO/WO (Green) ── */}
+                  <ClickableCell value={project.noOfPOs} color="green" onClick={() => navigate(`/projects/${project.projectId}/po`)} />
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/40 text-green-800 font-medium">
+                    {formatCurrency(project.poAmount)}
+                  </td>
+
+                  {/* ── Clickable: Bill Desk (Blue) ── */}
+                  <ClickableCell
+                    value={project.noOfInvoiceReceived}
+                    color="blue"
+                    onClick={() => navigate(`/projects/${project.projectId}/invoice-received`)}
+                  />
+
+                  {/* ── Clickable: Tax Invoice (Purple) ── */}
+                  <ClickableCell value={project.noOfTaxInvoice} color="purple" onClick={() => navigate(`/projects/${project.projectId}/tax-invoice`)} />
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-purple-50/40 text-purple-800 font-medium">
+                    {formatCurrency(project.taxInvoiceAmount)}
+                  </td>
+
+                  {/* ── Clickable: Invoice Booked (Orange) ── */}
+                  <ClickableCell value={project.noOfInvoiceBooked} color="orange" onClick={() => navigate(`/projects/${project.projectId}/invoice-booked`)} />
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-orange-50/40 text-orange-800 font-medium">
+                    {formatCurrency(project.invoiceAmount)}
+                  </td>
+
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
+                    {formatCurrency(project.amountPaid)}
+                  </td>
+
+                  <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-slate-900">
+                    {formatCurrency(project.ledgerBalance)}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedProjects.map((project) => (
-                  <tr
-                    key={project.srNo}
-                    className={`transition-colors hover:bg-primary-50/30 ${project.srNo % 2 === 0 ? "bg-white" : "bg-slate-50/40"
-                      }`}
-                  >
-                    <td className="px-4 py-3.5 text-slate-600 font-medium">{project.srNo}</td>
-                    <td className="px-4 py-3.5 text-primary-700 font-bold">{project.projectNumber}</td>
-                    <td className="px-4 py-3.5 text-slate-800">{project.customerName}</td>
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
-                      {formatCurrency(project.budgetAmount)}
-                    </td>
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
-                      {formatCurrency(project.receivedAmount)}
-                    </td>
-
-                    {/* ── Clickable: PO/WO (Green) ── */}
-                    <ClickableCell value={project.noOfPOs} color="green" onClick={() => navigate(`/projects/${project.projectId}/po`)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-green-50/40 text-green-800 font-medium">
-                      {formatCurrency(project.poAmount)}
-                    </td>
-
-                    {/* ── Clickable: Bill Desk (Blue) ── */}
-                    <ClickableCell
-                      value={project.noOfInvoiceReceived}
-                      color="blue"
-                      onClick={() => navigate(`/projects/${project.projectId}/invoice-received`)}
-                    />
-
-                    {/* ── Clickable: Tax Invoice (Purple) ── */}
-                    <ClickableCell value={project.noOfTaxInvoice} color="purple" onClick={() => navigate(`/projects/${project.projectId}/tax-invoice`)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-purple-50/40 text-purple-800 font-medium">
-                      {formatCurrency(project.taxInvoiceAmount)}
-                    </td>
-
-                    {/* ── Clickable: Invoice Booked (Orange) ── */}
-                    <ClickableCell value={project.noOfInvoiceBooked} color="orange" onClick={() => navigate(`/projects/${project.projectId}/invoice-booked`)} />
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums bg-orange-50/40 text-orange-800 font-medium">
-                      {formatCurrency(project.invoiceAmount)}
-                    </td>
-
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums text-slate-700">
-                      {formatCurrency(project.amountPaid)}
-                    </td>
-
-                    <td className="px-4 py-3.5 text-right border-l border-slate-200/60 tabular-nums font-bold text-slate-900">
-                      {formatCurrency(project.ledgerBalance)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {paginatedProjects.length === 0 && (
-              <div className="py-14 text-center text-slate-400">
-                <p className="font-medium">No projects found.</p>
-                <p className="text-sm mt-1">Try a different search term.</p>
-              </div>
-            )}
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={totalRecords}
-            pageSize={pageSize}
-          />
+              ))}
+            </tbody>
+          </table>
+          {paginatedProjects.length === 0 && (
+            <div className="py-14 text-center text-slate-400">
+              <p className="font-medium">No projects found.</p>
+              <p className="text-sm mt-1">Try a different search term.</p>
+            </div>
+          )}
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalRecords}
+          pageSize={pageSize}
+        />
       </div>
-    );
-  }
+    </div>
+  );
+}
