@@ -111,7 +111,16 @@ export default function ProjectsPage() {
           if (value) params.append(key, value);
         });
 
-        const baseUrl = `${API_BASE_URL}/pm/projects/all`;
+        const hasFilters = !!(
+          filterMgrId ||
+          filterProjectType ||
+          Object.values(columnFilters).some((v) => v)
+        );
+
+        const endpoint = hasFilters
+          ? "/pm/projects/filter"
+          : "/pm/projects/all";
+        const baseUrl = `${API_BASE_URL}${endpoint}`;
         const url = `${baseUrl}?${params.toString()}`;
 
         const response = await fetch(url);
