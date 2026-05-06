@@ -17,7 +17,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.status === "SUCCESS" && data.data && data.data.length > 0) {
         const userData = data.data[0];
         const role = userData.prjMgrNm === "admin" ? "admin" : "user";
-        
+
         const newUser: AuthUser = {
           name: userData.prjMgrNm,
           email: name,

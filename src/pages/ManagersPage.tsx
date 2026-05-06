@@ -12,9 +12,18 @@ import {
   Cell,
 } from "recharts";
 
-const COLORS = ["#6366f1", "#06b6d4", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#14b8a6", "#f97316"];
+const COLORS = [
+  "#6366f1",
+  "#06b6d4",
+  "#8b5cf6",
+  "#22c55e",
+  "#f59e0b",
+  "#ec4899",
+  "#14b8a6",
+  "#f97316",
+];
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://10.23.124.23:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // API response types
 interface ProjectData {
@@ -57,7 +66,6 @@ interface ManagerData {
   }[];
 }
 
-
 // ─── Manager Card (used only for admin list view) ─────────────────────────────
 function ManagerCard({
   manager,
@@ -66,8 +74,6 @@ function ManagerCard({
   manager: ManagerListItem;
   onSelect: () => void;
 }) {
-
-
   return (
     <button
       type="button"
@@ -83,7 +89,8 @@ function ManagerCard({
             {manager.managerName}
           </p>
           <p className="text-xs text-slate-500 truncate">
-            {manager.projects[0]?.type} {/* Shows the type from the specific record */}
+            {manager.projects[0]?.type}{" "}
+            {/* Shows the type from the specific record */}
           </p>
         </div>
       </div>
@@ -102,17 +109,22 @@ function ManagerCard({
 }
 
 // ─── Shared detail table + chart ─────────────────────────────────────────────
-function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNavigateToProjects: (typeCode: string, count: number) => void }) {
+function ManagerDetail({
+  data,
+  onNavigateToProjects,
+}: {
+  data: ManagerData;
+  onNavigateToProjects: (typeCode: string, count: number) => void;
+}) {
   const total = data.projects.reduce((s, p) => s + p.count, 0);
   const topProjectsData = useMemo(
     () => [...data.projects].sort((a, b) => b.count - a.count).slice(0, 8),
-    [data]
+    [data],
   );
-
 
   const maxCount = useMemo(
     () => Math.max(...data.projects.map((p) => p.count), 1),
-    [data]
+    [data],
   );
 
   return (
@@ -136,40 +148,67 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-slate-50 backdrop-blur shadow-[0_1px_0_0_#e2e8f0]">
               <tr>
-                <th className="px-5 py-3.5 text-left font-bold text-slate-700">Project Type</th>
-                <th className="px-5 py-3.5 text-right font-bold text-slate-700 border-l border-slate-200/60 w-40">No. Of Projects</th>
+                <th className="px-5 py-3.5 text-left font-bold text-slate-700">
+                  Project Type
+                </th>
+                <th className="px-5 py-3.5 text-right font-bold text-slate-700 border-l border-slate-200/60 w-40">
+                  No. Of Projects
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white/40">
               {data.projects.map((project) => {
                 const isHighlighted = !!project.highlight;
-                const widthPct = Math.max(4, Math.round((project.count / maxCount) * 100));
+                const widthPct = Math.max(
+                  4,
+                  Math.round((project.count / maxCount) * 100),
+                );
                 return (
                   <tr
                     key={project.code}
-                    onClick={() => onNavigateToProjects(project.code, project.count)}
+                    onClick={() =>
+                      onNavigateToProjects(project.code, project.count)
+                    }
                     title={`Click to view ${project.count} ${project.type} projects`}
                     className={`cursor-pointer transition-colors group ${isHighlighted ? "bg-yellow-50 hover:bg-yellow-100/80" : "hover:bg-primary-50/60"}`}
                   >
-                    <td className={`px-5 py-3 ${isHighlighted ? "font-semibold text-yellow-800" : "text-slate-700"}`}>
+                    <td
+                      className={`px-5 py-3 ${isHighlighted ? "font-semibold text-yellow-800" : "text-slate-700"}`}
+                    >
                       <div className="flex items-center gap-3">
-                        <span className="truncate group-hover:text-primary-700 transition-colors font-medium">{project.type}</span>
+                        <span className="truncate group-hover:text-primary-700 transition-colors font-medium">
+                          {project.type}
+                        </span>
                         <div className="hidden md:block flex-1 max-w-[180px] h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
                             className="h-full rounded-full"
                             style={{
                               width: `${widthPct}%`,
-                              backgroundColor: isHighlighted ? "#eab308" : "#6366f1",
+                              backgroundColor: isHighlighted
+                                ? "#eab308"
+                                : "#6366f1",
                               opacity: isHighlighted ? 1 : 0.55,
                             }}
                           />
                         </div>
-                        <svg className="w-3.5 h-3.5 text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg
+                          className="w-3.5 h-3.5 text-primary-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-auto"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
                       </div>
                     </td>
-                    <td className={`px-5 py-3 text-right border-l border-slate-200/60 tabular-nums ${isHighlighted ? "font-bold text-yellow-900" : "font-medium text-slate-700 group-hover:text-primary-700"} transition-colors`}>
+                    <td
+                      className={`px-5 py-3 text-right border-l border-slate-200/60 tabular-nums ${isHighlighted ? "font-bold text-yellow-900" : "font-medium text-slate-700 group-hover:text-primary-700"} transition-colors`}
+                    >
                       {project.count.toLocaleString()}
                     </td>
                   </tr>
@@ -178,7 +217,9 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
             </tbody>
             <tfoot className="sticky bottom-0 z-10 bg-slate-100/95 backdrop-blur shadow-[0_-1px_0_0_#cbd5e1]">
               <tr className="font-bold">
-                <td className="px-5 py-3 text-slate-800 text-sm">Grand Total</td>
+                <td className="px-5 py-3 text-slate-800 text-sm">
+                  Grand Total
+                </td>
                 <td className="px-5 py-3 text-right text-slate-900 border-l border-slate-200/60 tabular-nums">
                   {total.toLocaleString()}
                 </td>
@@ -191,20 +232,41 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
       {/* Right panel — sticky on desktop */}
       <div className="space-y-5 lg:sticky lg:top-2 lg:self-start">
         <div className="pm-card rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-slate-700">Top Project Types</h3>
+          <h3 className="text-sm font-bold text-slate-700">
+            Top Project Types
+          </h3>
           <div className="h-48 mt-3">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topProjectsData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <BarChart
+                data={topProjectsData}
+                layout="vertical"
+                margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#f1f5f9"
+                  horizontal={false}
+                />
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="type" hide />
                 <Tooltip
                   cursor={{ fill: "rgba(241, 245, 249, 0.6)" }}
-                  contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+                  }}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
                   {topProjectsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.highlight ? "#eab308" : COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        entry.highlight
+                          ? "#eab308"
+                          : COLORS[index % COLORS.length]
+                      }
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -215,7 +277,6 @@ function ManagerDetail({ data, onNavigateToProjects }: { data: ManagerData; onNa
     </div>
   );
 }
-
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -256,8 +317,6 @@ export default function ManagersPage() {
     setSearchParams(searchParams, { replace: true });
   };
 
-
-
   // State for the paginated list
   const [managersOnPage, setManagersOnPage] = useState<ManagerListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +325,8 @@ export default function ManagersPage() {
   const PAGE_SIZE = 10;
 
   // State for the detail view
-  const [activeManagerData, setActiveManagerData] = useState<ManagerData | null>(null);
+  const [activeManagerData, setActiveManagerData] =
+    useState<ManagerData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // Effect to fetch the list of manager records for the current page
@@ -282,11 +342,14 @@ export default function ManagersPage() {
 
       try {
         // The group-by-manager API returns all managers, so we fetch it once or assume it might have pagination
-        const response = await fetch(`${API_BASE_URL}/pm/projects/group-by-manager`);
-        if (!response.ok) throw new Error('Network response was not ok');
+        const response = await fetch(
+          `${API_BASE_URL}/pm/projects/group-by-manager`,
+        );
+        if (!response.ok) throw new Error("Network response was not ok");
 
         const apiResult = await response.json();
-        if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('Failed to fetch project data from API.');
+        if (apiResult.status !== "SUCCESS" || !apiResult.data)
+          throw new Error("Failed to fetch project data from API.");
 
         // Extract total records, use it for pagination
         const total = apiResult.totalRecords || apiResult.data.length;
@@ -294,23 +357,27 @@ export default function ManagersPage() {
         // Handle local pagination if the API returned all data
         const startIndex = (currentPage - 1) * PAGE_SIZE;
         const endIndex = startIndex + PAGE_SIZE;
-        const paginatedData = apiResult.data.length > PAGE_SIZE
-          ? apiResult.data.slice(startIndex, endIndex)
-          : apiResult.data;
+        const paginatedData =
+          apiResult.data.length > PAGE_SIZE
+            ? apiResult.data.slice(startIndex, endIndex)
+            : apiResult.data;
 
-        const managerListFromApi: ManagerListItem[] = paginatedData.map((manager: any, idx: number) => ({
-          managerId: manager.prjMgrId,
-          managerName: manager.prjMgrNm,
-          reactKey: `mgr-${manager.prjMgrId}-${idx}`,
-          projects: [{
-            type: "Total Projects",
-            count: manager.projectCount,
-          }],
-        }));
+        const managerListFromApi: ManagerListItem[] = paginatedData.map(
+          (manager: any, idx: number) => ({
+            managerId: manager.prjMgrId,
+            managerName: manager.prjMgrNm,
+            reactKey: `mgr-${manager.prjMgrId}-${idx}`,
+            projects: [
+              {
+                type: "Total Projects",
+                count: manager.projectCount,
+              },
+            ],
+          }),
+        );
 
         setManagersOnPage(managerListFromApi);
         setTotalRecords(total);
-
       } catch (e: any) {
         setError(e.message || "Failed to fetch project data.");
       } finally {
@@ -332,25 +399,30 @@ export default function ManagersPage() {
       setDetailLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/pm/projects/manager/${selectedManager.id}`);
-        if (!response.ok) throw new Error(`Network error fetching details for manager ${selectedManager.id}`);
+        const response = await fetch(
+          `${API_BASE_URL}/pm/projects/manager/${selectedManager.id}`,
+        );
+        if (!response.ok)
+          throw new Error(
+            `Network error fetching details for manager ${selectedManager.id}`,
+          );
 
         const apiResult: ApiResponse = await response.json();
-        if (apiResult.status !== 'SUCCESS' || !apiResult.data) throw new Error('API did not return success for manager details.');
+        if (apiResult.status !== "SUCCESS" || !apiResult.data)
+          throw new Error("API did not return success for manager details.");
 
-        const projects = apiResult.data.map(p => ({
+        const projects = apiResult.data.map((p) => ({
           type: p.prjTypDescription,
           count: p.noOfProject,
-          code: p.prjTypCode
+          code: p.prjTypCode,
         }));
 
         const managerDetailData: ManagerData = {
           managerName: selectedManager.name,
-          projects: projects
+          projects: projects,
         };
 
         setActiveManagerData(managerDetailData);
-
       } catch (e: any) {
         setError(e.message || "Failed to fetch manager details.");
       } finally {
@@ -361,11 +433,10 @@ export default function ManagersPage() {
     fetchManagerDetails();
   }, [selectedManager?.id, selectedManager?.name]);
 
-
-
-
   const handleNavigateToProjects = (typeCode: string, count: number) => {
-    navigate(`/projects?mgrId=${selectedManager?.id}&type=${typeCode}&count=${count}`);
+    navigate(
+      `/projects?mgrId=${selectedManager?.id}&type=${typeCode}&count=${count}`,
+    );
   };
 
   return (
@@ -379,14 +450,28 @@ export default function ManagersPage() {
                 onClick={() => setSelectedManager(null)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors shrink-0"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
                 Back
               </button>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Manager Wise Projects Details</h2>
-                <p className="text-sm text-slate-500 mt-0.5">Viewing projects for {selectedManager.name}</p>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Manager Wise Projects Details
+                </h2>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Viewing projects for {selectedManager.name}
+                </p>
               </div>
             </div>
           </div>
@@ -394,9 +479,12 @@ export default function ManagersPage() {
       ) : (
         <div className="pm-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Manager Wise Projects Details</h2>
+            <h2 className="text-xl font-bold text-slate-900">
+              Manager Wise Projects Details
+            </h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              Showing {managersOnPage.length} records on this page. Select a record to see full details.
+              Showing {managersOnPage.length} records on this page. Select a
+              record to see full details.
             </p>
           </div>
         </div>
@@ -404,8 +492,16 @@ export default function ManagersPage() {
 
       {selectedManager ? (
         <>
-          {detailLoading && <div className="p-10 text-center text-slate-500 font-medium">Loading manager details...</div>}
-          {error && !detailLoading && <div className="p-10 text-center text-red-600 font-medium">Error: {error}</div>}
+          {detailLoading && (
+            <div className="p-10 text-center text-slate-500 font-medium">
+              Loading manager details...
+            </div>
+          )}
+          {error && !detailLoading && (
+            <div className="p-10 text-center text-red-600 font-medium">
+              Error: {error}
+            </div>
+          )}
           {activeManagerData && !detailLoading && (
             <ManagerDetail
               data={activeManagerData}
@@ -414,15 +510,22 @@ export default function ManagersPage() {
           )}
         </>
       ) : (
-        <div id="managers-grid" className="pm-card rounded-2xl overflow-hidden flex flex-col">
+        <div
+          id="managers-grid"
+          className="pm-card rounded-2xl overflow-hidden flex flex-col"
+        >
           {loading ? (
             <div className="p-20 text-center">
               <div className="inline-block w-8 h-8 border-4 border-primary-500/30 border-t-primary-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-slate-500 font-medium">Loading managers list...</p>
+              <p className="text-slate-500 font-medium">
+                Loading managers list...
+              </p>
             </div>
           ) : error ? (
             <div className="p-20 text-center">
-              <p className="text-red-500 font-medium mb-2">Error loading managers</p>
+              <p className="text-red-500 font-medium mb-2">
+                Error loading managers
+              </p>
               <p className="text-slate-400 text-sm">{error}</p>
             </div>
           ) : (
@@ -432,18 +535,25 @@ export default function ManagersPage() {
                   <ManagerCard
                     key={manager.reactKey}
                     manager={manager}
-                    onSelect={() => setSelectedManager({ id: manager.managerId, name: manager.managerName })}
+                    onSelect={() =>
+                      setSelectedManager({
+                        id: manager.managerId,
+                        name: manager.managerName,
+                      })
+                    }
                   />
                 ))}
               </div>
-              {totalRecords > PAGE_SIZE && <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(totalRecords / PAGE_SIZE)}
-                onPageChange={setCurrentPage}
-                totalItems={totalRecords}
-                pageSize={PAGE_SIZE}
-                scrollTargetId="managers-grid"
-              />}
+              {totalRecords > PAGE_SIZE && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(totalRecords / PAGE_SIZE)}
+                  onPageChange={setCurrentPage}
+                  totalItems={totalRecords}
+                  pageSize={PAGE_SIZE}
+                  scrollTargetId="managers-grid"
+                />
+              )}
             </>
           )}
         </div>
