@@ -334,27 +334,17 @@ export default function ManagersPage() {
 
   // Effect to fetch the list of manager records for the current page
   useEffect(() => {
+    // Modified fetchData function with query parameters
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      // Only clear if we are navigating away from a selection back to the list
-      // But actually, we only want to clear activeManagerData if selectedManager is null
-      if (!selectedManager) {
-        setActiveManagerData(null);
-      }
 
       try {
         const token = localStorage.getItem("access_token");
-
-        // Backend may restrict `group-by-manager` to ADMIN only.
-        // For non-admin users, call manager-specific grouped endpoint.
-        // Admin sees all managers.
         const endpoint = isAdmin
           ? `${API_BASE_URL}/api/pm/projects/group-by-manager`
-          : `${API_BASE_URL}/api/pm/projects/group-by-manager/${user?.id ?? ""}`;
+          : `${API_BASE_URL}/api/pm/projects/group-by-manager?userId=${user?.id}`;
 
-        // Send Authorization header explicitly.
-        // (Some backends return 403 if the header key/value formatting is unexpected.)
         const response = await fetch(endpoint, {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -362,21 +352,19 @@ export default function ManagersPage() {
           },
         });
 
-        // Helpful debug for 403.
         if (response.status === 403) {
           const txt = await response.text().catch(() => "");
           console.error("403 from", endpoint, "response:", txt);
         }
+
         if (!response.ok) throw new Error("Network response was not ok");
 
         const apiResult = await response.json();
         if (apiResult.status !== "SUCCESS" || !apiResult.data)
           throw new Error("Failed to fetch project data from API.");
 
-        // Extract total records, use it for pagination
+        // Pagination logic remains the same
         const total = apiResult.totalRecords || apiResult.data.length;
-
-        // Handle local pagination if the API returned all data
         const startIndex = (currentPage - 1) * PAGE_SIZE;
         const endIndex = startIndex + PAGE_SIZE;
         const paginatedData =
@@ -384,21 +372,14 @@ export default function ManagersPage() {
             ? apiResult.data.slice(startIndex, endIndex)
             : apiResult.data;
 
-        const managerListFromApi: ManagerListItem[] = paginatedData.map(
-          (manager: any, idx: number) => ({
+        setManagersOnPage(
+          paginatedData.map((manager: any, idx: number) => ({
             managerId: manager.prjMgrId,
             managerName: manager.prjMgrNm,
             reactKey: `mgr-${manager.prjMgrId}-${idx}`,
-            projects: [
-              {
-                type: "Total Projects",
-                count: manager.projectCount,
-              },
-            ],
-          }),
+            projects: [{ type: "Total Projects", count: manager.projectCount }],
+          })),
         );
-
-        setManagersOnPage(managerListFromApi);
         setTotalRecords(total);
       } catch (e: any) {
         setError(e.message || "Failed to fetch project data.");
