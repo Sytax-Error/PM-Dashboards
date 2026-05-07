@@ -291,10 +291,13 @@ export default function ManagersPage() {
 
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-
+  console.log(user);
   const selectedManager = useMemo(() => {
     if (!isAdmin && user) {
-      return { id: user.managerId as number, name: user.name };
+      // Non-admin user can only view their own manager-wise data.
+      // AuthUser interface in this project does not currently include `managerId`,
+      // so we fall back to `user.id`.
+      return { id: user.id, name: user.name };
     }
     return selectedManagerId
       ? { id: Number(selectedManagerId), name: selectedManagerName || "" }
@@ -341,10 +344,29 @@ export default function ManagersPage() {
       }
 
       try {
-        // The group-by-manager API returns all managers, so we fetch it once or assume it might have pagination
-        const response = await fetch(
-          `${API_BASE_URL}/pm/projects/group-by-manager`,
-        );
+        const token = localStorage.getItem("access_token");
+
+        // Backend may restrict `group-by-manager` to ADMIN only.
+        // For non-admin users, call manager-specific grouped endpoint.
+        // Admin sees all managers.
+        const endpoint = isAdmin
+          ? `${API_BASE_URL}/api/pm/projects/group-by-manager`
+          : `${API_BASE_URL}/api/pm/projects/group-by-manager/${user?.id ?? ""}`;
+
+        // Send Authorization header explicitly.
+        // (Some backends return 403 if the header key/value formatting is unexpected.)
+        const response = await fetch(endpoint, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Accept: "application/json",
+          },
+        });
+
+        // Helpful debug for 403.
+        if (response.status === 403) {
+          const txt = await response.text().catch(() => "");
+          console.error("403 from", endpoint, "response:", txt);
+        }
         if (!response.ok) throw new Error("Network response was not ok");
 
         const apiResult = await response.json();
@@ -399,8 +421,14 @@ export default function ManagersPage() {
       setDetailLoading(true);
       setError(null);
       try {
+        const token = localStorage.getItem("access_token");
         const response = await fetch(
-          `${API_BASE_URL}/pm/projects/manager/${selectedManager.id}`,
+          `${API_BASE_URL}/api/pm/projects/manager/${selectedManager.id}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          },
         );
         if (!response.ok)
           throw new Error(

@@ -36,8 +36,14 @@ export default function InvoiceBookedPage() {
         setError(null);
         try {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+          const token = localStorage.getItem("access_token");
           const response = await fetch(
-            `${API_BASE_URL}/pm/invoice/project/${projectId}`,
+            `${API_BASE_URL}/api/pm/invoice/project/${projectId}`,
+            {
+              headers: {
+                Authorization: token ? `Bearer ${token}` : "",
+              },
+            },
           );
           if (!response.ok) throw new Error("Network response was not ok");
           const apiResult = await response.json();

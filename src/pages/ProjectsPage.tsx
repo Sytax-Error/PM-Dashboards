@@ -120,10 +120,15 @@ export default function ProjectsPage() {
         const endpoint = hasFilters
           ? "/pm/projects/filter"
           : "/pm/projects/all";
-        const baseUrl = `${API_BASE_URL}${endpoint}`;
+        const baseUrl = `${API_BASE_URL}/api${endpoint}`;
         const url = `${baseUrl}?${params.toString()}`;
 
-        const response = await fetch(url);
+        const token = localStorage.getItem("access_token");
+        const response = await fetch(url, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        });
         if (!response.ok) throw new Error("Network response was not ok");
 
         const apiResult = await response.json();

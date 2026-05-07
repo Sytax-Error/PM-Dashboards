@@ -20,18 +20,18 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
-            <Navigate 
+            <Navigate
               to={
-                user?.role === "admin" 
-                  ? "/dashboard" 
-                  : `/managers?mgrId=${user?.managerId}&mgrName=${encodeURIComponent(user?.name || "")}`
-              } 
-              replace 
+                user?.role === "admin"
+                  ? "/dashboard"
+                  : `/managers?mgrId=${user?.id}&mgrName=${encodeURIComponent(user?.name || "")}`
+              }
+              replace
             />
-          } 
+          }
         />
         <Route path="/dashboard" element={<HomePage />} />
         <Route path="/home" element={<Navigate to="/dashboard" replace />} />
@@ -39,9 +39,18 @@ function AppContent() {
         <Route path="/projects" element={<ProjectsPage />} />
         {/* Detail Pages with Project ID */}
         <Route path="/projects/:projectId/po" element={<PODetailsPage />} />
-        <Route path="/projects/:projectId/invoice-received" element={<InvoiceReceivedPage />} />
-        <Route path="/projects/:projectId/invoice-booked" element={<InvoiceBookedPage />} />
-        <Route path="/projects/:projectId/tax-invoice" element={<TaxInvoicePage />} />
+        <Route
+          path="/projects/:projectId/invoice-received"
+          element={<InvoiceReceivedPage />}
+        />
+        <Route
+          path="/projects/:projectId/invoice-booked"
+          element={<InvoiceBookedPage />}
+        />
+        <Route
+          path="/projects/:projectId/tax-invoice"
+          element={<TaxInvoicePage />}
+        />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
